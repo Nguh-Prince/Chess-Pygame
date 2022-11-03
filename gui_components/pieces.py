@@ -1,12 +1,39 @@
 import os
 import pygame
 
+colors_notations_and_values = {
+    "w": {
+        "p": 1,
+        "n": 3,
+        "b": 3,
+        "r": 5,
+        "q": 9,
+        "k": 90
+    }, 
+    "b": {
+        "p": -1,
+        "n": -3,
+        "b": -3,
+        "r": -5,
+        "q": -9,
+        "k": -90
+    }
+}
+
 class Piece():
-    def __init__(self, name, notation, color, skin_directory="skins/default") -> None:
+    def __init__(self, name, notation, color, skin_directory="skins/default", value: int=None) -> None:
         self.name = name
         self.notation = notation
         self.color = color
         self.skin_directory = skin_directory
+
+        if value:
+            self.value = value if self.color == "w" else value * -1
+        else:
+            self.value = self.get_value_from_notation()
+
+    def get_value_from_notation(self) -> int:
+        return colors_notations_and_values[self.color][self.notation]
 
     def get_image_path(self):
         return os.path.join(self.skin_directory, self.color, f"{self.notation}.png")

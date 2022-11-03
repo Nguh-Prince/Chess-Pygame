@@ -36,6 +36,12 @@ class ChessSquare(Square):
     def get_chess_square(self) -> chess.Square:
         return chess.square(self.file_number, self.rank_number)
 
+    def is_identical_to_chess_square(self, square: chess.Square) -> bool:
+        return (
+            self.file_number == chess.square_file(square) and 
+            self.rank_number == chess.square_rank(square)
+        )
+
     def get_rank(self) -> str:
         return self.ranks[ self.rank_number ]
 
@@ -90,6 +96,14 @@ class ChessBoard(Board):
             return piece
         
         return None
+
+    def get_square_from_chess_square(self, square: chess.Square) -> ChessSquare:
+        square_file = chess.square_file(square)
+        square_rank = chess.square_rank(square)
+
+        rank = self.squares[ 7 - square_rank ]
+        
+        return rank[ square_file ]
 
     def create_squares(self):
         string = self.board.__str__()
@@ -225,16 +239,35 @@ class ChessBoard(Board):
 
         print(f"Making a move. The source square is {source_square.get_notation()}, the destination square is {destination_square.get_notation()}")
         print(f"The piece on the source square is: {source_square.piece.__str__()}")
+
+        self._play(source_square, destination_square)
+
+    def _play(self, source_square: ChessSquare=None, destination_square: ChessSquare=None, 
+        source_chess_square: chess.Square=None, destination_chess_square: chess.Square=None,
+        move=None
+    ):
+        if move:
+            self.make_move(move)
+
+        elif source_square and destination_square:
+            move = self.get_move_notation(source_square, destination_square)
+            self.make_move(move)
+            print(f"The move to make is '{move}'")
+
+        elif source_chess_square and destination_chess_square:
+            move = chess.Move(from_square=source_chess_square, to_square=destination_chess_square)
+            self.make_move(move)
         
-        move = self.get_move_notation(source_square, destination_square)
-
-        self.board.push_san(move)
         self.place_pieces()
-
-        print(f"The move to make is '{move}'")
 
         print('The current board is')
         print(self.board)
+
+    def make_move(self, move):
+        if isinstance(move, str):
+            self.board.push_san(move)
+        elif isinstance(move, chess.Move):
+            self.board.push(move)
 
     def iter_squares(self):
         for rank in self.squares:
