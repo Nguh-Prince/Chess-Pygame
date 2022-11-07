@@ -44,6 +44,9 @@ class MoveNode(Node):
         super().__init__(data, children, parent)
         self.total_weight = self.get_total_weight()
 
+    def __str__(self) -> str:
+        return f"Move number: {self.data.fullmove_number}, evaluation: {self.data.evaluation} move: {self.data.move.__str__()}"
+
     def compare_data(self, data_1: MoveNodeData, data_2: MoveNodeData) -> int:
         if data_1.evaluation == data_2.evaluation:
             return 0
@@ -121,18 +124,18 @@ class AIPlayer:
 
         ranks = [ row.split(' ') for row in string.split('\n') if regex.search(row)]
         
-        for rank in ranks:
-            for notation in rank:
+        for i, rank in enumerate(ranks):
+            for j, notation in enumerate(rank):
                 if regex.search(notation):
                     piece_color = Piece.get_piece_color_based_on_notation(notation)
                     
-                    material_sum += Piece.get_value_from_notation(notation, piece_color)
+                    material_sum += Piece.get_piece_value_from_notation_and_position(notation, piece_color, 7-i, 7-j)
 
         return material_sum
 
     def make_move(self, chess_board: ChessBoard):
         move = self.choose_move()
-
+        print(f"Choosing move: {move.__str__()}")
         chess_board._play(move=move)
 
     def create_moves_subtree(self, board: chess.Board, move, tree: Tree, parent_node, current_height, required_height):
@@ -249,8 +252,9 @@ class MiniMaxPlayer(PlayerWithEvaluation):
         # compute the game tree and get the leaf with the smallest or largest 
         # evaluation depending on the player's color
         print("Computing the moves tree")
-        tree = self.compute_moves_tree(required_height=3)
+        tree = self.compute_moves_tree(required_height=3, board=board)
         
+        print("Selecting the optimal move using minimax")
         optimal_node = self.minimax(tree.root_node)
         node = optimal_node.parent
 
@@ -258,4 +262,4 @@ class MiniMaxPlayer(PlayerWithEvaluation):
         while node.parent is not tree.root_node:
             node = node.parent
 
-        return node
+        return node.data.move

@@ -86,6 +86,9 @@ class ChessBoard(Board):
         print(self.board)
 
         self.create_squares()
+        
+        # the square the piece that made the latest move came from
+        self.previous_move_square = None 
     
     def get_piece_from_notation(self, notation):
         if notation != '.':
@@ -188,7 +191,7 @@ class ChessBoard(Board):
         move = ''
         
         if source_square.piece:
-            other_pieces_of_the_same_type_that_can_make_move = self.get_pieces_that_can_make_move( [source_square.piece.notation], source_square.piece.color, destination_square, [source_square] )
+            other_pieces_of_the_same_type_that_can_make_move = self.get_pieces_that_can_make_move( [source_square.piece.get_notation()], source_square.piece.color, destination_square, [source_square] )
             same_rank = False
             same_file = False
 
@@ -232,7 +235,7 @@ class ChessBoard(Board):
         return move
 
     def get_pieces_that_can_make_move(self, piece_notations: list, color, square: ChessSquare, squares_to_exclude: list):
-        squares_with_pieces_of_specified_types = [ _square for _square in self.iter_squares() if _square.piece and _square.piece.notation in piece_notations and _square.piece.color == color and _square not in squares_to_exclude ]
+        squares_with_pieces_of_specified_types = [ _square for _square in self.iter_squares() if _square.piece and _square.piece.get_notation() in piece_notations and _square.piece.color == color and _square not in squares_to_exclude ]
         squares_that_can_make_move = [ _square for _square in squares_with_pieces_of_specified_types if square in self.get_possible_moves_without_hint(_square.center) ]
 
         return squares_that_can_make_move
@@ -248,19 +251,24 @@ class ChessBoard(Board):
 
     def _play(self, source_square: ChessSquare=None, destination_square: ChessSquare=None, 
         source_chess_square: chess.Square=None, destination_chess_square: chess.Square=None,
-        move=None
+        move: chess.Move=None
     ):
         if move:
             self.make_move(move)
+            self.previous_move_square = self.get_square_from_chess_square(move.from_square)
 
         elif source_square and destination_square:
             move = self.get_move_notation(source_square, destination_square)
             self.make_move(move)
-            print(f"The move to make is '{move}'")
+            self.previous_move_square = source_square
 
         elif source_chess_square and destination_chess_square:
             move = chess.Move(from_square=source_chess_square, to_square=destination_chess_square)
             self.make_move(move)
+            self.previous_move_square = self.get_square_from_chess_square(source_chess_square)
+        
+        else:
+            print("None of the conditions were fulfilled. No move is currently being made")
         
         self.place_pieces()
 
