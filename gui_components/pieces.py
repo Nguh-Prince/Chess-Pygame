@@ -30,13 +30,19 @@ class Piece():
         if value:
             self.value = value if self.color == "w" else value * -1
         else:
-            self.value = self.get_value_from_notation()
+            self.value = self.get_piece_value()
+    
+    def get_piece_value(self):
+        return colors_notations_and_values[self.color][self.notation.lower()]
 
-    def get_value_from_notation(self) -> int:
-        return colors_notations_and_values[self.color][self.notation]
+    def get_piece_color_based_on_notation(notation) -> str:
+        return "w" if notation.isupper() else "b"
+
+    def get_value_from_notation(notation: str, color: str) -> int:
+        return colors_notations_and_values[color][notation.lower()]
 
     def get_image_path(self):
-        return os.path.join(self.skin_directory, self.color, f"{self.notation}.png")
+        return os.path.join(self.skin_directory, self.color, f"{self.notation.lower()}.png")
 
     def get_image(self):
         image_path = self.get_image_path()

@@ -225,6 +225,10 @@ class ChessBoard(Board):
             else:
                 return '0-0'
 
+        move = chess.Move(
+            from_square=source_square.get_chess_square(), to_square=destination_square.get_chess_square()
+        )
+
         return move
 
     def get_pieces_that_can_make_move(self, piece_notations: list, color, square: ChessSquare, squares_to_exclude: list):

@@ -4,7 +4,7 @@ import pygame
 import chess
 from gui_components.board import ChessBoard
 
-from ai.players import AIPlayer, RandomPlayer
+from ai import players as ai_players
 
 pygame.init()
 
@@ -14,7 +14,7 @@ board = chess.Board()
 
 players = {
     True: "user",
-    False: RandomPlayer(board)
+    False: ai_players.MiniMaxPlayer(board, "b")
 }
 
 SOURCE_POSITION = None
@@ -54,20 +54,20 @@ def play(source_coordinates: tuple=None, destination_coordinates: tuple=None):
         # AI model to play
         print("AI is making move")
         player.make_move(chess_board)
+        print("AI has made move")
+        
         TURN = not TURN
         
-        if isinstance(players[TURN], AIPlayer):
+        if isinstance(players[TURN], ai_players.AIPlayer):
             # if the next player is an AI, automatically play
-            sleep(5)
-            play()
+            print("Next player is AI, making a move for them automaically")
+            # sleep(5)
     else:
         if source_coordinates and destination_coordinates:
             # user to play
             print("User is making move")
             chess_board.play(source_coordinates, destination_coordinates)
             TURN = not TURN
-        else: 
-            pass
 
 
 def click_handler(position):
@@ -100,8 +100,8 @@ def click_handler(position):
                 if not isinstance(current_player, str):
                     # automatically play with the AI if it is their turn
                     play()
-    else:
-        play()
+    # else:
+    #     play()
 
 def draw_chessboard(board: ChessBoard):
     cell_height = board.square_size
@@ -145,6 +145,8 @@ while running:
     draw_chessboard(chess_board)
 
     if not isinstance(players[TURN], str) and IS_FIRST_MOVE:
+        play()
+    elif not isinstance(players[TURN], str):
         play()
 
     pygame.display.flip()
