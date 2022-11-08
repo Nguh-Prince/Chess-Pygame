@@ -71,6 +71,7 @@ class ChessBoard(Board):
         self, left, top, width, height, 
         horizontal_padding, vertical_padding, 
         light_square_color: str=(245, 245, 245), dark_square_color: str=(100, 100, 100), 
+        previous_square_highlight_color=(223, 227, 67),
         square_size=64, board=None, move_hints=True
     ) -> None:
         super().__init__(
@@ -89,6 +90,7 @@ class ChessBoard(Board):
         
         # the square the piece that made the latest move came from
         self.previous_move_square = None 
+        self.previous_square_highlight_color = previous_square_highlight_color
     
     def get_piece_from_notation(self, notation):
         if notation != '.':

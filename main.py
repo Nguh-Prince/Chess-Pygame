@@ -56,7 +56,10 @@ def draw_chessboard(board: ChessBoard):
 
     for i, rank in enumerate(board.squares):
         for j, square in enumerate(rank):
-            pygame.draw.rect( screen, square.background_color, square )
+            if not square is board.previous_move_square:
+                pygame.draw.rect( screen, square.background_color, square )
+            else:
+                pygame.draw.rect( screen, board.previous_square_highlight_color, square )
 
             if square.piece:
                 try:

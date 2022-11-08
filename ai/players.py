@@ -257,6 +257,8 @@ class MiniMaxPlayer(PlayerWithEvaluation):
         print("Selecting the optimal move using minimax")
         optimal_node = self.minimax(tree.root_node)
         node = optimal_node.parent
+        print("The weight along this optimal node's path is")
+        print(optimal_node.total_weight)
 
         # get the predecessor of the optimal node that is a direct descendant of the root node
         while node.parent is not tree.root_node:
