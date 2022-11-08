@@ -1,3 +1,5 @@
+import copy
+
 import chess
 
 import pygame
@@ -52,7 +54,7 @@ class ChessSquare(Square):
         return f'{self.get_file()}{self.get_rank()}'
 
 class Board(pygame.sprite.Sprite):
-    def __init__(self, number_of_rows, number_of_columns, left, top, width, height, horizontal_padding, vertical_padding) -> None:
+    def __init__(self, number_of_rows, number_of_columns, left, top, width, height, horizontal_padding, vertical_padding, **kwargs) -> None:
         self.left = left
         self.top = top
         self.number_of_rows = number_of_rows
@@ -72,11 +74,11 @@ class ChessBoard(Board):
         horizontal_padding, vertical_padding, 
         light_square_color: str=(245, 245, 245), dark_square_color: str=(100, 100, 100), 
         previous_square_highlight_color=(223, 227, 67),
-        square_size=64, board=None, move_hints=True
+        square_size=64, board=None, move_hints=True, **kwargs
     ) -> None:
         super().__init__(
             8, 8, left, top, width, height, 
-            horizontal_padding, vertical_padding
+            horizontal_padding, vertical_padding, **kwargs
         )
         self.square_size = square_size
         self.light_square_color = light_square_color
@@ -88,9 +90,18 @@ class ChessBoard(Board):
 
         self.create_squares()
         
+        self.captured_pieces = []
+        
         # the square the piece that made the latest move came from
         self.previous_move_square = None 
         self.previous_square_highlight_color = previous_square_highlight_color
+
+        self.is_flipped = bool(kwargs["flipped"]) if "flipped" in kwargs else False
+        
+        # set to True if a pawn has the right to promote and has to choose which piece it wants to promote to
+        self.awaiting_promotion = False
+
+        # self.flip()
     
     def get_piece_from_notation(self, notation):
         if notation != '.':
@@ -132,6 +143,27 @@ class ChessBoard(Board):
                 )
 
                 self.squares[i].append( board_square )
+
+    def flip(self):
+        board_rect = pygame.Rect(self.left, self.top, self.width, self.height)
+
+        for (i, rank) in enumerate(self.squares):
+            print(f"Flipping the squares on rank: {8 - i}")
+            for (j, square) in enumerate(rank):
+                square: ChessSquare = square
+                _old = square.__repr__()
+
+                square.x += (7 - j) * self.square_size
+                square.y += (7 - i) * self.square_size
+                
+                if not square.colliderect(board_rect):
+                    print("Square is out of bounds of the board")
+                    print(f"The board rectangle is: {board_rect}. The square rectangle is: {square}")
+
+                else:
+                    print(f"Square was flipped successfully. Old coordinates: {_old}, new: {square}")
+
+        self.is_flipped = not self.is_flipped
 
     def place_pieces(self):
         """

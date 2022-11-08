@@ -50,11 +50,16 @@ chess_board = ChessBoard(
     0, 0, 500, 500, 0, 0, board=board, square_size=CELL_HEIGHT
 )
 
-def draw_chessboard(board: ChessBoard):
-    cell_height = board.square_size
-    cell_width = board.square_size
+def flip_board(board: ChessBoard):
+    chess_board.flip()
 
-    for i, rank in enumerate(board.squares):
+def draw_chessboard(board: ChessBoard, flip=False):
+    ranks = board.squares
+    
+    # if flip: 
+        # flip_board(chess_board)
+
+    for i, rank in enumerate(ranks):
         for j, square in enumerate(rank):
             if not square is board.previous_move_square:
                 pygame.draw.rect( screen, square.background_color, square )
@@ -63,7 +68,11 @@ def draw_chessboard(board: ChessBoard):
 
             if square.piece:
                 try:
-                    screen.blit( square.piece.get_image(), square.topleft )
+                    image = square.piece.get_image()
+                    image_rect = image.get_rect()
+                    image_rect.center = square.center
+
+                    screen.blit( image, image_rect )
                 except TypeError as e:
                     print(f"The square's piece is: ")
                     print(square.piece)
@@ -79,7 +88,6 @@ def draw_chessboard(board: ChessBoard):
                     square.center,
                     board.square_size*0.25
                 )
-
 
 def play(source_coordinates: tuple=None, destination_coordinates: tuple=None):
     global board, TURN, IS_FIRST_MOVE, chess_board
@@ -168,8 +176,7 @@ while running:
 
     screen.fill( (255, 255, 255) )
     
-    # draw_board(board)
-    draw_chessboard(chess_board)
+    draw_chessboard(chess_board, True)
 
     if not isinstance(players[TURN], str) and IS_FIRST_MOVE:
         print("It is the first move and there is no human player")
