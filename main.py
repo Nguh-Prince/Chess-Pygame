@@ -9,6 +9,7 @@ from pygame import mixer
 mixer.init()
 
 from gui_components.board import ChessBoard
+from gui_components.components import BorderedRectangle
 
 from ai import players as ai_players
 
@@ -20,7 +21,7 @@ board = chess.Board()
 
 players = {
     True: "user",
-    False: ai_players.MiniMaxPlayer(board, "b")
+    False: ai_players.PlayerWithEvaluation(board, "b")
 }
 
 turns_taken = {
@@ -41,17 +42,20 @@ IS_FIRST_MOVE = True
 
 running = True
 
-CELL_HEIGHT = 500 / 8
-CELL_WIDTH = 500 / 8
 LIGHT_COLOR = (245, 245, 245)
 DARK_COLOR = ( 100, 100, 100 )
+WHITE_COLOR = (255, 255, 255)
 
 chess_board = ChessBoard(
-    0, 0, 500, 500, 0, 0, board=board, square_size=CELL_HEIGHT
+    50, 50, 400, 400, 0, 0, board=board
 )
 
 def flip_board(board: ChessBoard):
     chess_board.flip()
+
+def draw_bordered_rectangle(rectangle: BorderedRectangle, screen):
+    pygame.draw.rect( screen, rectangle.border_color, rectangle.outer_rectangle )
+    pygame.draw.rect( screen, rectangle.background_color, rectangle.inner_rectangle )
 
 def draw_chessboard(board: ChessBoard, flip=False):
     ranks = board.squares
@@ -59,13 +63,44 @@ def draw_chessboard(board: ChessBoard, flip=False):
     # if flip: 
         # flip_board(chess_board)
 
+    # draw board borders
+    bordered_rectangle = BorderedRectangle(10, 10, 480, 480, (255, 255, 255), DARK_COLOR, 10)
+
+    pygame.draw.rect( screen, bordered_rectangle.border_color, bordered_rectangle.outer_rectangle )
+
+    pygame.draw.rect( screen, bordered_rectangle.background_color, bordered_rectangle.inner_rectangle )
+
+    board_border_rect = pygame.Rect( 45, 45, 410, 410 )
+    pygame.draw.rect(screen, DARK_COLOR, board_border_rect)
+
+    top_player_captured_pieces_bordered_rectangle = BorderedRectangle(45, 20, 410, 25, WHITE_COLOR, DARK_COLOR, 5)
+    draw_bordered_rectangle(top_player_captured_pieces_bordered_rectangle, screen)
+
+    bottom_player_captured_pieces_bordered_rectangle = BorderedRectangle(45, 450, 410, 25, WHITE_COLOR, DARK_COLOR, 5)
+    draw_bordered_rectangle(bottom_player_captured_pieces_bordered_rectangle, screen)
+
+    captured_pieces_width = 15
+    captured_pieces_height = 15
+
+    for index, piece in enumerate(chess_board.captured_pieces["w"]):
+        image = piece.get_image()
+        image_rect = image.get_rect()
+        image_rect.centery = top_player_captured_pieces_bordered_rectangle.inner_rectangle.centery
+        image_rect.left = ( top_player_captured_pieces_bordered_rectangle.inner_rectangle.left + 5 ) * (index * captured_pieces_width)
+        image_rect.width = captured_pieces_width
+        image_rect.height = captured_pieces_height
+
+        screen.blit(image, image_rect)
+
     for i, rank in enumerate(ranks):
         for j, square in enumerate(rank):
-            if not square is board.previous_move_square:
-                pygame.draw.rect( screen, square.background_color, square )
-            else:
+            if square is board.previous_move_square:
                 pygame.draw.rect( screen, board.previous_square_highlight_color, square )
-
+            elif square is board.current_move_square:
+                pygame.draw.rect( screen, board.current_square_highlight_color, square )
+            else:
+                pygame.draw.rect( screen, square.background_color, square )
+            
             if square.piece:
                 try:
                     image = square.piece.get_image()

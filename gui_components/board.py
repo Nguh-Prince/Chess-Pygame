@@ -73,14 +73,15 @@ class ChessBoard(Board):
         self, left, top, width, height, 
         horizontal_padding, vertical_padding, 
         light_square_color: str=(245, 245, 245), dark_square_color: str=(100, 100, 100), 
-        previous_square_highlight_color=(223, 227, 67),
-        square_size=64, board=None, move_hints=True, **kwargs
+        previous_square_highlight_color=(186, 202, 43),
+        current_square_highlight_color=(246, 246, 105),
+        board=None, move_hints=True, **kwargs
     ) -> None:
         super().__init__(
             8, 8, left, top, width, height, 
             horizontal_padding, vertical_padding, **kwargs
         )
-        self.square_size = square_size
+        self.__set_square_size()
         self.light_square_color = light_square_color
         self.dark_square_color = dark_square_color
         self.board = board
@@ -90,11 +91,17 @@ class ChessBoard(Board):
 
         self.create_squares()
         
-        self.captured_pieces = []
+        self.captured_pieces = {
+            "w": [],
+            "b": []
+        }
         
         # the square the piece that made the latest move came from
         self.previous_move_square = None 
+        self.current_move_square = None 
+        
         self.previous_square_highlight_color = previous_square_highlight_color
+        self.current_square_highlight_color = current_square_highlight_color
 
         self.is_flipped = bool(kwargs["flipped"]) if "flipped" in kwargs else False
         
@@ -103,6 +110,14 @@ class ChessBoard(Board):
 
         # self.flip()
     
+    def __set_square_size(self):
+        self.__square_size = self.height // 8
+
+    @property
+    def square_size(self) -> int:
+        return self.__square_size
+
+
     def get_piece_from_notation(self, notation):
         if notation != '.':
             piece_color = "b" if notation.islower() else "w"
@@ -290,16 +305,19 @@ class ChessBoard(Board):
         if move:
             self.make_move(move)
             self.previous_move_square = self.get_square_from_chess_square(move.from_square)
+            self.current_move_square = self.get_square_from_chess_square(move.to_square)
 
         elif source_square and destination_square:
             move = self.get_move_notation(source_square, destination_square)
             self.make_move(move)
             self.previous_move_square = source_square
+            self.current_move_square = destination_square
 
         elif source_chess_square and destination_chess_square:
             move = chess.Move(from_square=source_chess_square, to_square=destination_chess_square)
             self.make_move(move)
             self.previous_move_square = self.get_square_from_chess_square(source_chess_square)
+            self.current_move_square = self.get_square_from_chess_square(destination_chess_square)
         
         else:
             print("None of the conditions were fulfilled. No move is currently being made")
@@ -313,6 +331,22 @@ class ChessBoard(Board):
         if isinstance(move, str):
             self.board.push_san(move)
         elif isinstance(move, chess.Move):
+            
+            if self.board.is_capture(move):
+                destination_square: ChessSquare = self.get_square_from_chess_square(move.to_square)
+                piece = destination_square.piece
+                
+                print("The move was a capture")
+
+                if piece is not None:
+                    print("THere was a piece object on the square appending the object to the list of captured pieces")
+                    color = piece.color
+
+                    self.captured_pieces[color].append(piece)
+
+                    print("Piece added successfully to the list. All pieces captured")
+                    print(self.captured_pieces)
+
             self.board.push(move)
 
     def iter_squares(self):

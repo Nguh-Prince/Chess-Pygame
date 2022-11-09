@@ -135,3 +135,23 @@ class Tree:
             self.find_smallest_and_largest_node(visited, child, minimum_node, maximum_node)
 
         return ( minimum_node, maximum_node, visited )
+
+    def get_leaf_nodes(self, root_node: Node=None):
+        leaf_nodes = []
+
+        if root_node is None:
+            root_node = self.root_node
+
+        if not root_node:
+            return None
+        
+        if not root_node.children:
+            print("Returning leaf node gotten from tree")
+            return root_node
+        
+        for child in root_node.children:
+            print("Getting leaf nodes of some children")
+            leaf_nodes.append( self.get_leaf_nodes(child) )
+
+        print("Returning all the leaf nodes gotten")
+        return leaf_nodes

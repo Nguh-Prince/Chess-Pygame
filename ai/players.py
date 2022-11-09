@@ -47,7 +47,16 @@ class MoveNode(Node):
     def __str__(self) -> str:
         return f"Move number: {self.data.fullmove_number}, evaluation: {self.data.evaluation} move: {self.data.move.__str__()}"
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
     def compare_data(self, data_1: MoveNodeData, data_2: MoveNodeData) -> int:
+        if data_1.evaluation is None:
+            return -1
+        
+        if data_2.evaluation is None:
+            return 1
+
         if data_1.evaluation == data_2.evaluation:
             return 0
         if data_1.evaluation < data_2.evaluation:
@@ -138,7 +147,10 @@ class AIPlayer:
         print(f"Choosing move: {move.__str__()}")
         chess_board._play(move=move)
 
-    def create_moves_subtree(self, board: chess.Board, move, tree: Tree, parent_node, current_height, required_height):
+    def create_moves_subtree(
+        self, board: chess.Board, move, tree: Tree, 
+        parent_node, current_height, required_height
+    ):
         try:
             board = copy.deepcopy(board)
 
@@ -230,6 +242,11 @@ class PlayerWithEvaluation(AIPlayer):
 
 
 class MiniMaxPlayer(PlayerWithEvaluation):
+    def __init__(self, board: chess.Board, color: str) -> None:
+        super().__init__(board, color)
+        self.moves_tree: Tree = None
+        self.last_move_node: MoveNode = None
+
     def minimax(self, node: MoveNode, is_max=None):
         """
         The next move in the game is the node's children not the node itself.
@@ -248,13 +265,80 @@ class MiniMaxPlayer(PlayerWithEvaluation):
         else:
             return node
 
-    def choose_move(self, board: chess.Board = None):
-        # compute the game tree and get the leaf with the smallest or largest 
-        # evaluation depending on the player's color
-        print("Computing the moves tree")
-        tree = self.compute_moves_tree(required_height=3, board=board)
+    def expand_subtree_to_depth(self, root_node: MoveNode, depth=3, revise_existing_children=False, board: chess.Board=None) -> Tree:
+        """
+        Depth here does not include the root node, just its descendants.
+        The board's latest move must correspond to the root_node's move for this method to work effectively
+        """
+        if board is None:
+            board = copy.deepcopy(self.board)
+
+        tree = Tree(root_node=root_node)
+
+        current_depth = tree.get_height() - 1
+
+        leaf_nodes = tree.get_leaf_nodes()
+        for node in leaf_nodes:
+            # since we are getting the leaf moves, we have to first of all execute all of the 
+            # moves preceding those ones in the tree
+            _node = node.parent
+            
+            moves_to_make = []
+
+            while _node is not root_node:
+                moves_to_make.append(_node)
+
+                _node = _node.parent
+
+                if _node is None:
+                    break
+
+            while moves_to_make:
+                move = moves_to_make.pop()
+                board.push(move.data.move)
+
+            try:
+                self.create_moves_subtree(
+                    board, node.data.move, tree, 
+                    root_node, current_depth, depth
+                )
+            except Exception as e:
+                raise e
         
-        print("Selecting the optimal move using minimax")
+        return tree
+
+    def choose_move(self, board: chess.Board = None):
+        if board is None:
+            board = self.board
+
+        if self.last_move_node:
+            grandparent = self.last_move_node.parent
+
+            # check where in the tree the last move is found and deepen the tree from there 
+            # instead of creating a new tree
+            new_root_node = None
+            
+            last_move = board.move_stack.pop()
+
+            for parent in grandparent.children:
+                last_move_node_found = False
+                for child in parent.children:
+                    if child.data.move == last_move and child.data.fullmove_number == board.fullmove_number:
+                        new_root_node = child
+                        last_move_node_found = True
+                
+                if last_move_node_found:
+                    break
+
+            tree = self.expand_subtree_to_depth(new_root_node)
+        
+        else:
+            # compute the game tree and get the leaf with the smallest or largest 
+            # evaluation depending on the player's color
+            print("Computing the moves tree")
+            tree = self.compute_moves_tree(required_height=2, board=board)
+        
+        # print("Selecting the optimal move using minimax")
         optimal_node = self.minimax(tree.root_node)
         node = optimal_node.parent
         print("The weight along this optimal node's path is")
@@ -263,5 +347,7 @@ class MiniMaxPlayer(PlayerWithEvaluation):
         # get the predecessor of the optimal node that is a direct descendant of the root node
         while node.parent is not tree.root_node:
             node = node.parent
+
+        self.last_move_node = node
 
         return node.data.move

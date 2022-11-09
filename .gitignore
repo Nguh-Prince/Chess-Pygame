@@ -1,3 +1,5 @@
 environment/
 .env
 ipython_history.md
+database.sqlite
+test.py
