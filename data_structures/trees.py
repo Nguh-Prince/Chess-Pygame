@@ -1,5 +1,3 @@
-import numpy
-
 class Node:
     def __init__(self, data, children: list=None, parent=None):
         self.data = data
@@ -68,8 +66,11 @@ class Tree:
         self.height = 0
 
     def get_height(self, node=None) -> int:
+        modify_height = False
+
         if node is None:
             node = self.root_node
+            modify_height = True
 
         if not node:
             return 0
@@ -77,11 +78,12 @@ class Tree:
         if not node.children:
             return 1
 
-        child_heights = numpy.array([ self.get_height(child) for child in node.children ])
+        child_heights = [ self.get_height(child) for child in node.children ]
 
-        height = numpy.max( child_heights ) + 1
+        height = max( child_heights ) + 1
 
-        self.height = height
+        if modify_height:
+            self.height = height
 
         return height
 

@@ -54,45 +54,156 @@ def flip_board(board: ChessBoard):
     chess_board.flip()
 
 def draw_bordered_rectangle(rectangle: BorderedRectangle, screen):
-    pygame.draw.rect( screen, rectangle.border_color, rectangle.outer_rectangle )
-    pygame.draw.rect( screen, rectangle.background_color, rectangle.inner_rectangle )
+    pygame.draw.rect( screen, rectangle.border_color, rectangle.outer_rectangle, width=rectangle.outer_rectangle_border_width )
+    pygame.draw.rect( screen, rectangle.background_color, rectangle.inner_rectangle, width=rectangle.inner_rectangle_border_width )
 
-def draw_chessboard(board: ChessBoard, flip=False):
-    ranks = board.squares
-    
-    # if flip: 
-        # flip_board(chess_board)
-
-    # draw board borders
-    bordered_rectangle = BorderedRectangle(10, 10, 480, 480, (255, 255, 255), DARK_COLOR, 10)
-
-    pygame.draw.rect( screen, bordered_rectangle.border_color, bordered_rectangle.outer_rectangle )
-
-    pygame.draw.rect( screen, bordered_rectangle.background_color, bordered_rectangle.inner_rectangle )
-
-    board_border_rect = pygame.Rect( 45, 45, 410, 410 )
-    pygame.draw.rect(screen, DARK_COLOR, board_border_rect)
-
-    top_player_captured_pieces_bordered_rectangle = BorderedRectangle(45, 20, 410, 25, WHITE_COLOR, DARK_COLOR, 5)
-    draw_bordered_rectangle(top_player_captured_pieces_bordered_rectangle, screen)
-
-    bottom_player_captured_pieces_bordered_rectangle = BorderedRectangle(45, 450, 410, 25, WHITE_COLOR, DARK_COLOR, 5)
-    draw_bordered_rectangle(bottom_player_captured_pieces_bordered_rectangle, screen)
-
-    captured_pieces_width = 15
-    captured_pieces_height = 15
-
-    for index, piece in enumerate(chess_board.captured_pieces["w"]):
+def draw_captured_images(rectangle: pygame.Rect, captured_pieces_list, margin_left: int=5, difference: int=None):
+    for index, piece in enumerate(captured_pieces_list):
         image = piece.get_image()
         image_rect = image.get_rect()
-        image_rect.centery = top_player_captured_pieces_bordered_rectangle.inner_rectangle.centery
-        image_rect.left = ( top_player_captured_pieces_bordered_rectangle.inner_rectangle.left + 5 ) * (index * captured_pieces_width)
-        image_rect.width = captured_pieces_width
-        image_rect.height = captured_pieces_height
+        image_rect.centery = rectangle.centery
+        image_rect.left = ( rectangle.left + margin_left ) + ( index * image_rect.width )
 
         screen.blit(image, image_rect)
 
+    if difference is not None:
+        print("In draw_captured_images() the difference is not None")
+        font = pygame.font.SysFont('helvetica', 15)
+        text = font.render(f"+{difference}", True, DARK_COLOR )
+        text_rect = text.get_rect()
+        text_rect.centery = rectangle.centery
+        text_rect.left = (rectangle.left + margin_left) + ( 15 * len(captured_pieces_list) )
+        
+        screen.blit(text, text_rect)
+
+def get_material_difference(captured_pieces_dictionary: dict):
+    difference = 0
+    
+    for color, captured_pieces in captured_pieces_dictionary.items():
+        difference += sum( [ piece.value for piece in captured_pieces ] )
+
+    return difference
+
+def draw_chessboard(board: ChessBoard, flip=False):
+    ranks = board.squares
+
+    bordered_rectangle = BorderedRectangle(10, 10, 480, 480, (255, 255, 255), DARK_COLOR, 10)
+
+    # draw_bordered_rectangle(bordered_rectangle, screen)
+
+    # board_border_rect = pygame.Rect( 40, 40, 400, 400 )
+    # pygame.draw.rect(screen, DARK_COLOR, board_border_rect, width=1)
+
+    board_bordered_rectangle = BorderedRectangle(25, 25, 450, 450, WHITE_COLOR, DARK_COLOR, 48)
+    draw_bordered_rectangle(board_bordered_rectangle, screen)
+
+    pygame.draw.rect( 
+        screen, board_bordered_rectangle.border_color, board_bordered_rectangle.inner_rectangle, 
+        width=1
+    )
+
+    # top_player_captured_pieces_bordered_rectangle = BorderedRectangle(45, 20, 410, 25, WHITE_COLOR, DARK_COLOR, 5)
+    # draw_bordered_rectangle(top_player_captured_pieces_bordered_rectangle, screen)
+
+    # bottom_player_captured_pieces_bordered_rectangle = BorderedRectangle(45, 450, 410, 25, WHITE_COLOR, DARK_COLOR, 5)
+    # draw_bordered_rectangle(bottom_player_captured_pieces_bordered_rectangle, screen)
+
+    # captured_material_difference = get_material_difference( chess_board.captured_pieces )
+
+    # if captured_material_difference != 0:
+    #     if captured_material_difference > 0: 
+    #         print("Black has a material advantage")
+    #         # black has more
+    #         draw_captured_images(
+    #             top_player_captured_pieces_bordered_rectangle.inner_rectangle, chess_board.captured_pieces["w"], 
+    #             difference=abs(captured_material_difference)
+    #         )
+        
+    #         draw_captured_images(
+    #             bottom_player_captured_pieces_bordered_rectangle.inner_rectangle, 
+    #             chess_board.captured_pieces["b"]
+    #         )
+        
+    #     else:
+    #         print("White has material advantage")
+    #         # white has more
+    #         draw_captured_images(
+    #             top_player_captured_pieces_bordered_rectangle.inner_rectangle, chess_board.captured_pieces["w"]
+    #         )
+        
+    #         draw_captured_images(
+    #             bottom_player_captured_pieces_bordered_rectangle.inner_rectangle, 
+    #             chess_board.captured_pieces["b"], abs(captured_material_difference)
+    #         )
+    # else:
+    #     # equal material
+    #     draw_captured_images(
+    #         top_player_captured_pieces_bordered_rectangle.inner_rectangle, chess_board.captured_pieces["w"]
+    #     )
+        
+    #     draw_captured_images(
+    #         bottom_player_captured_pieces_bordered_rectangle.inner_rectangle, chess_board.captured_pieces["b"]
+    #     )
+
+    # for index, piece in enumerate(chess_board.captured_pieces["w"]):
+    #     image = piece.get_image()
+    #     image_rect = image.get_rect()
+    #     image_rect.centery = top_player_captured_pieces_bordered_rectangle.inner_rectangle.centery
+    #     image_rect.left = ( top_player_captured_pieces_bordered_rectangle.inner_rectangle.left + 5 ) + (index * captured_pieces_width)
+
+    #     screen.blit(image, image_rect)
+
+    board_top_left = board.rect.topleft
+    board_top_right = board.rect.topright
+    board_bottom_left = board.rect.bottomleft
+
     for i, rank in enumerate(ranks):
+        rank_number = ChessBoard.RANKS[ 7 - i ]
+        file_letter = ChessBoard.RANKS[i]
+        
+        font_size = 15 # font size for the ranks and files
+        
+        # add the text rectangle on the left and right of the board
+        font = pygame.font.SysFont('helvetica', font_size)
+
+        # render the ranks (1-8)
+        for _i in range(2):
+            if _i == 0:
+                _rect = pygame.Rect(
+                    board_top_left[0] - font_size, board_top_left[1] + (i*board.square_size), 
+                    font_size, board.square_size
+                )
+            else:
+                _rect = pygame.Rect(
+                    board_top_right[0], board_top_right[1] + (i*board.square_size),
+                    font_size, board.square_size
+                )
+
+            text = font.render(f"{rank_number}", True, DARK_COLOR)
+            text_rect = text.get_rect()
+            text_rect.center = _rect.center
+
+            screen.blit(text, text_rect)
+
+        # render the files A-H
+        for _i in range(2):
+            if _i == 0:
+                _rect = pygame.Rect(
+                    board_top_left[0] + (i*board.square_size), board_top_left[1] - font_size, 
+                    board.square_size, font_size
+                )
+            else:
+                _rect = pygame.Rect(
+                    board_top_left[0] + (i*board.square_size), board_bottom_left[1], 
+                    board.square_size, font_size
+                )
+            
+            text = font.render(f"{file_letter}", True, DARK_COLOR)
+            text_rect = text.get_rect()
+            text_rect.center = _rect.center
+
+            screen.blit(text, text_rect)
+            
         for j, square in enumerate(rank):
             if square is board.previous_move_square:
                 pygame.draw.rect( screen, board.previous_square_highlight_color, square )
@@ -124,21 +235,21 @@ def draw_chessboard(board: ChessBoard, flip=False):
                     board.square_size*0.25
                 )
 
+def play_sound(board):
+    if board.is_checkmate():
+        mixer.Sound.play(checkmate_sound)
+    
+    elif board.is_check():
+        mixer.Sound.play(check_sound)
+    
+    elif board.is_stalemate():
+        pass
+    
+    else:
+        mixer.Sound.play(move_sound)
+
 def play(source_coordinates: tuple=None, destination_coordinates: tuple=None):
     global board, TURN, IS_FIRST_MOVE, chess_board
-
-    if board.is_checkmate():
-        print("The game is over, checkmate")
-        mixer.Sound.play(checkmate_sound)
-        return
-
-    if board.is_check():
-        print("Check")
-        mixer.Sound.play(check_sound)
-
-    if board.is_stalemate():
-        print("The game is over, stalemate")
-        return
 
     turn = board.turn
 
@@ -149,7 +260,7 @@ def play(source_coordinates: tuple=None, destination_coordinates: tuple=None):
     if not isinstance(player, str):
         # AI model to play
         player.make_move(chess_board)
-        mixer.Sound.play(move_sound)
+        play_sound(board)
         
         TURN = not TURN
         
@@ -162,7 +273,7 @@ def play(source_coordinates: tuple=None, destination_coordinates: tuple=None):
             # user to play
             print("User is making move")
             chess_board.play(source_coordinates, destination_coordinates)
-            mixer.Sound.play(move_sound)
+            play_sound(board)
             TURN = not TURN
 
     if IS_FIRST_MOVE:

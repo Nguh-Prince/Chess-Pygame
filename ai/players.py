@@ -12,6 +12,10 @@ from gui_components.pieces import Piece
 
 from data_structures.trees import Node, Tree
 
+class Player:
+    def __init__(self, name: str, color: str, board: chess.Board) -> None:
+        pass
+
 # class UserPlayer:
 #     def __init__(self, board) -> None:
 #         self.board = board

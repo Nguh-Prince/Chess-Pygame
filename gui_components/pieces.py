@@ -1,4 +1,3 @@
-import numpy
 import os
 import pygame
 
@@ -85,11 +84,12 @@ piece_square_tables = {
 }
 
 class Piece():
-    def __init__(self, name, notation, color, skin_directory="skins/default", value: int=None) -> None:
+    def __init__(self, name, notation, color, skin_directory="skins/default", value: int=None, is_captured=False) -> None:
         self.name = name
         self.__notation = notation
         self.color = color
         self.skin_directory = skin_directory
+        self.set_is_captured(is_captured)
 
         if value:
             self.value = value if self.color == "w" else value * -1
@@ -105,6 +105,9 @@ class Piece():
     def get_value_from_notation(notation: str, color: str) -> int:
         return colors_notations_and_values[color][notation.lower()]
 
+    def set_is_captured(self, is_captured: bool):
+        self.__is_captured = bool(is_captured)
+
     def get_piece_value_from_notation_and_position(notation: str, color: str, rank_number, file_number):
         position_value = piece_square_tables[notation.lower()][7 - rank_number][7 - file_number]
         
@@ -116,7 +119,12 @@ class Piece():
         return position_value + piece_value
 
     def get_image_path(self):
-        return os.path.join(self.skin_directory, self.color, f"{self.__notation.lower()}.png")
+        if not self.__is_captured:
+            path = os.path.join(self.skin_directory, self.color, f"{self.__notation.lower()}.png")
+        else:
+            path = os.path.join(self.skin_directory, self.color, "captured", f"{self.__notation.lower()}.png")
+        
+        return path
 
     def get_image(self):
         image_path = self.get_image_path()

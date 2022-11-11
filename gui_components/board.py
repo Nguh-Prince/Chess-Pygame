@@ -54,6 +54,9 @@ class ChessSquare(Square):
         return f'{self.get_file()}{self.get_rank()}'
 
 class Board(pygame.sprite.Sprite):
+    RANKS = [ i+1 for i in range(0, 8) ]
+    FILES = [ chr(i) for i in range(65, 65+9) ]
+
     def __init__(self, number_of_rows, number_of_columns, left, top, width, height, horizontal_padding, vertical_padding, **kwargs) -> None:
         self.left = left
         self.top = top
@@ -88,6 +91,7 @@ class ChessBoard(Board):
         self.move_hints = move_hints
         print('The current board is')
         print(self.board)
+        self.rect = pygame.Rect(left, top, width, height)
 
         self.create_squares()
         
@@ -334,18 +338,15 @@ class ChessBoard(Board):
             
             if self.board.is_capture(move):
                 destination_square: ChessSquare = self.get_square_from_chess_square(move.to_square)
-                piece = destination_square.piece
+                piece: Piece = destination_square.piece
                 
                 print("The move was a capture")
 
                 if piece is not None:
-                    print("THere was a piece object on the square appending the object to the list of captured pieces")
+                    piece.set_is_captured(True)
                     color = piece.color
 
                     self.captured_pieces[color].append(piece)
-
-                    print("Piece added successfully to the list. All pieces captured")
-                    print(self.captured_pieces)
 
             self.board.push(move)
 
