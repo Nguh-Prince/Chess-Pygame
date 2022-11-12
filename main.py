@@ -167,7 +167,7 @@ def draw_chessboard(board: ChessBoard, flip=False):
         font = pygame.font.SysFont('helvetica', font_size)
 
         # render the ranks (1-8)
-        for _i in range(2):
+        for _i in range(1):
             if _i == 0:
                 _rect = pygame.Rect(
                     board_top_left[0] - font_size, board_top_left[1] + (i*board.square_size), 
@@ -186,7 +186,7 @@ def draw_chessboard(board: ChessBoard, flip=False):
             screen.blit(text, text_rect)
 
         # render the files A-H
-        for _i in range(2):
+        for _i in range(1):
             if _i == 0:
                 _rect = pygame.Rect(
                     board_top_left[0] + (i*board.square_size), board_top_left[1] - font_size, 
