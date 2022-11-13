@@ -339,18 +339,3 @@ class ChessGame:
                     self.play(self.source_position, position)
                     
                     self.source_position = None
-
-if __name__ == "__main__":
-    pygame.init()
-
-    screen = pygame.display.set_mode( [500, 500] )
-
-    board = chess.Board()
-
-    players = {
-        True: "user",
-        False: ai_players.PlayerWithEvaluation(board, "b")
-    }
-
-    game = ChessGame(screen, players, board=board)
-    game.start()
