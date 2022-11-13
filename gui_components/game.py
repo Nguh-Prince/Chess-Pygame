@@ -62,6 +62,8 @@ class ChessGame:
         self.source_position = None
         self.first_move_has_been_played = False
 
+        self.game_over = False
+
     def create_chess_board(self, board: chess.Board) -> ChessBoard:
         dimensions = self.get_board_dimensions()
         left = ((self.screen_width - dimensions[0]) / 2) + self.origin[0]
@@ -97,7 +99,7 @@ class ChessGame:
             """
             difference = 0
 
-            for color, captured_pieces in self.board.captured_pieces:
+            for color, captured_pieces in self.board.captured_pieces.items():
                 for index, piece in enumerate(captured_pieces):
                     image = piece.get_image()
                     image_rect = image.get_rect()
@@ -122,12 +124,12 @@ class ChessGame:
                 if difference > 0:
                     # black has captured more material than white, draw the absolute
                     # value of the difference next to the pieces captured
-                    color = "b"
+                    color = "w"
                     rectangle = rectangles[color]
                 else:
                     # white has captured more material than black, draw the absolute value of 
                     # the difference next to the pieces captured
-                    color = "w"
+                    color = "b"
                     rectangle = rectangles[color]
 
                 font = pygame.font.SysFont('helvetica', 15)
@@ -225,9 +227,26 @@ class ChessGame:
                         square.center, board_square_size * 0.25
                     )
 
+            captured_pieces_rectangle_height = 20
+
+            captured_pieces_rectangles = {
+                "b": pygame.Rect( 
+                    board_top_left[0], board_top_left[1] - captured_pieces_rectangle_height, self.board.rect.width
+                    , captured_pieces_rectangle_height
+                ),
+                "w": pygame.Rect( 
+                    board_bottom_left[0], board_bottom_left[1] + 20, self.board.rect.width
+                    , captured_pieces_rectangle_height
+                )
+            }
+
+            draw_captured_piece_images(captured_pieces_rectangles)
+
     def play_sound(self):
         if self.board.board.is_checkmate():
-            pygame.mixer.Sound.play(self.SOUNDS["checkmate"])
+            if not self.game_over:
+                pygame.mixer.Sound.play(self.SOUNDS["checkmate"])
+                self.game_over = True
 
         elif self.board.board.is_check():
             pygame.mixer.Sound.play(self.SOUNDS["check"])
