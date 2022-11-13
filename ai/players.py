@@ -14,7 +14,9 @@ from data_structures.trees import Node, Tree
 
 class Player:
     def __init__(self, name: str, color: str, board: chess.Board) -> None:
-        pass
+        self.name = name
+        self.color = color
+        self.board = board
 
 # class UserPlayer:
 #     def __init__(self, board) -> None:

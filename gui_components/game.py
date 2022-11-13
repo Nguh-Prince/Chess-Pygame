@@ -1,9 +1,12 @@
 import chess
 
 # from ..data_structures import trees
-# from ..ai import players as ai_players
-from board import ChessBoard
+from ai import players as ai_players
+from gui_components.board import ChessBoard
 import pygame
+
+# pygame.init()
+pygame.mixer.init()
 
 from gui_components.components import BorderedRectangle
 
@@ -37,13 +40,15 @@ class ChessGame:
         self.show_captured_pieces = show_captured_pieces
         self.screen = screen
 
-        for player in players:
-            if player.color == "w":
-                self.current_player = None
+        # for key, player in players.items():
+        #     if player.color == "w":
+        #         self.current_player = None
+        self.current_player = players[True]
 
         self.screen_width = screen_width
         self.screen_height = screen_height
-        self.origin = origin
+
+        self.origin = origin if origin is not None else (0, 0)
 
         self.color_scheme = "default" # a key in the COLORS dictionary for the colors of the light and dark squares
 

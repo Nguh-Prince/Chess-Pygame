@@ -74,7 +74,7 @@ class Board(pygame.sprite.Sprite):
 class ChessBoard(Board):
     def __init__(
         self, left, top, width, height, 
-        horizontal_padding, vertical_padding, 
+        horizontal_padding=None, vertical_padding=None, 
         light_square_color: str=(245, 245, 245), dark_square_color: str=(100, 100, 100), 
         previous_square_highlight_color=(186, 202, 43),
         current_square_highlight_color=(246, 246, 105),
