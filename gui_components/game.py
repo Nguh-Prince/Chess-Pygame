@@ -1,3 +1,4 @@
+import threading
 import chess
 
 # from ..data_structures import trees
@@ -12,7 +13,7 @@ from gui_components.components import BorderedRectangle
 
 class ChessGame:
     BOARD_DIMENSIONS = (400, 400)
-    BOARD_OUTERMOST_BORDER_DIMENSIONS = (480, 480)
+    BOARD_OUTERMOST_BORDER_DIMENSIONS = (500, 500)
 
     COLORS = {
         "white": (255, 255, 255),
@@ -39,6 +40,7 @@ class ChessGame:
         self.show_ranks_and_files = show_ranks_and_files
         self.show_captured_pieces = show_captured_pieces
         self.screen = screen
+        self.screen_rect = screen.get_rect()
 
         # for key, player in players.items():
         #     if player.color == "w":
@@ -56,6 +58,9 @@ class ChessGame:
             board = chess.Board()
 
         self.create_chess_board(board)
+
+        self.source_position = None
+        self.first_move_has_been_played = False
 
     def create_chess_board(self, board: chess.Board) -> ChessBoard:
         dimensions = self.get_board_dimensions()
@@ -85,22 +90,51 @@ class ChessGame:
             pygame.draw.rect(self.screen, rectangle.border_color, rectangle.outer_rectangle, width=rectangle.outer_rectangle_border_width)
             pygame.draw.rect(self.screen, rectangle.border_color, rectangle.inner_rectangle, width=rectangle.inner_rectangle_border_width)
         
-        def draw_captured_images(rectangle: pygame.Rect, captured_pieces_list, margin_left: int=5, difference: int=None):
-            for index, piece in enumerate(captured_pieces_list):
-                image = piece.get_image()
-                image_rect = image.get_rect()
-                image_rect.centery = rectangle.centery
-                image_rect.left = ( rectangle.left + margin_left ) + ( index * image_rect.width )
+        def draw_captured_piece_images(rectangles: dict, margin_left: int=5):
+            """
+            rectangles is a dictionary with keys "b" and "w" and values of pygame.Rect objects
+            in which to display the captured pieces of each side
+            """
+            difference = 0
 
-                self.screen.blit(image, image_rect)
+            for color, captured_pieces in self.board.captured_pieces:
+                for index, piece in enumerate(captured_pieces):
+                    image = piece.get_image()
+                    image_rect = image.get_rect()
 
-            if difference is not None:
-                print("In draw_captured_images() the difference is not None")
+                    difference += -(piece.value)
+
+                    if color == "w":
+                        # draw the pieces on black's side
+                        rectangle = rectangles["b"]
+                    else:
+                        # draw the pieces on white's side
+                        rectangle = rectangles["w"]
+
+                    image = piece.get_image()
+                    image_rect = image.get_rect()
+                    image_rect.centery = rectangle.centery
+                    image_rect.left = ( rectangle.left + margin_left ) + ( index * image_rect.width )
+
+                    self.screen.blit(image, image_rect)
+
+            if difference != 0:
+                if difference > 0:
+                    # black has captured more material than white, draw the absolute
+                    # value of the difference next to the pieces captured
+                    color = "b"
+                    rectangle = rectangles[color]
+                else:
+                    # white has captured more material than black, draw the absolute value of 
+                    # the difference next to the pieces captured
+                    color = "w"
+                    rectangle = rectangles[color]
+
                 font = pygame.font.SysFont('helvetica', 15)
-                text = font.render(f"+{difference}", True, self.dark_square_color )
+                text = font.render(f"+{abs(difference)}", True, self.dark_square_color )
                 text_rect = text.get_rect()
                 text_rect.centery = rectangle.centery
-                text_rect.left = (rectangle.left + margin_left) + ( 15 * len(captured_pieces_list) )
+                text_rect.left = (rectangle.left + margin_left) + ( 15 * len(self.board.captured_pieces[color]) )
                 
                 self.screen.blit(text, text_rect)
 
@@ -115,7 +149,7 @@ class ChessGame:
 
         # the difference in sizes between the inner and outer rectangles
         size = outermost_border_width - self.BOARD_DIMENSIONS[0] - 2
-
+        
         board_bordered_rectangle = BorderedRectangle(
             left, top, outermost_border_width, outermost_border_height, 
             self.COLORS["white"], self.dark_square_color, size
@@ -128,7 +162,6 @@ class ChessGame:
         )
 
         board_top_left = self.board.rect.topleft
-        board_top_right = self.board.rect.topright
         board_bottom_left = self.board.rect.bottomleft
         board_square_size = self.board.square_size
 
@@ -191,7 +224,7 @@ class ChessGame:
                         self.screen, self.possible_move_highlight_color, 
                         square.center, board_square_size * 0.25
                     )
-    
+
     def play_sound(self):
         if self.board.board.is_checkmate():
             pygame.mixer.Sound.play(self.SOUNDS["checkmate"])
@@ -209,6 +242,31 @@ class ChessGame:
     def possible_move_highlight_color(self):
         return self.COLORS["move_highlight"]
 
+    def play(self, source_coordinates: tuple=None, destination_coordinates: tuple=None):
+        current_player = self.current_player
+
+        if isinstance(current_player, ai_players.Player):
+            # it's the user's turn to play
+            if self.board.rect.collidepoint(*source_coordinates) and self.board.rect.collidepoint(*destination_coordinates):
+                self.board.play(source_coordinates, destination_coordinates)
+
+                if not self.first_move_has_been_played:
+                    self.first_move_has_been_played = True
+
+                self.play_sound()
+        else:
+            current_player.make_move(self.board)
+            
+            if not self.first_move_has_been_played:
+                    self.first_move_has_been_played = True
+                    
+            self.play_sound()
+
+        self.set_current_player()
+
+    def set_current_player(self):
+        self.current_player = self.players[ self.board.board.turn ]
+
     def start(self):
         running = True
 
@@ -216,27 +274,64 @@ class ChessGame:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    self.click_handler(pygame.mouse.get_pos())
 
             self.screen.fill( self.COLORS["white"] )
 
             self.draw_board()
 
+            if isinstance(self.current_player, ai_players.AIPlayer):
+                self.play_in_thread()
+
             pygame.display.flip()
 
         pygame.quit()
         print("Window closed")
+    
+    def play_in_thread(self):
+        thread = threading.Thread(target=lambda: self.play())
+        thread.start()
+        return thread
 
-pygame.init()
-pygame.mixer.init()
+    def click_handler(self, position):
+        current_player = self.current_player
 
-screen = pygame.display.set_mode( [500, 500] )
+        if isinstance(current_player, ai_players.Player):
+            # user
+            if self.source_position is None:
+                # user is initiating a move
+                self.possible_moves = self.board.get_possible_moves(position)
+                self.source_position = position if self.possible_moves else None
+            else:
+                # user has already clicked on a piece they want to move
+                destination_square = [ square for square in self.possible_moves if square.collidepoint(position) ]
 
-board = chess.Board()
+                if not destination_square:
+                    # removing the move hints
+                    self.board.get_possible_moves(self.source_position, remove_hints=True)
+                    self.source_position = None
+                else:
+                    destination_square = destination_square[0]
+                    # removing the move hints
+                    self.board.get_possible_moves(self.source_position, remove_hints=True)
 
-players = {
-    True: "user",
-    False: ai_players.PlayerWithEvaluation(board, "b")
-}
+                    self.play(self.source_position, position)
+                    
+                    self.source_position = None
 
-game = ChessGame(screen, players, board=board)
-game.start()
+if __name__ == "__main__":
+    pygame.init()
+
+    screen = pygame.display.set_mode( [500, 500] )
+
+    board = chess.Board()
+
+    players = {
+        True: "user",
+        False: ai_players.PlayerWithEvaluation(board, "b")
+    }
+
+    game = ChessGame(screen, players, board=board)
+    game.start()

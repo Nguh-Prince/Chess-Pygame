@@ -78,7 +78,7 @@ class ChessBoard(Board):
         light_square_color: str=(245, 245, 245), dark_square_color: str=(100, 100, 100), 
         previous_square_highlight_color=(186, 202, 43),
         current_square_highlight_color=(246, 246, 105),
-        board=None, move_hints=True, **kwargs
+        board: chess.Board=None, move_hints=True, **kwargs
     ) -> None:
         super().__init__(
             8, 8, left, top, width, height, 
