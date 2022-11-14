@@ -64,6 +64,8 @@ class ChessGame:
 
         self.game_over = False
 
+        self.ai_playing = False
+
     def create_chess_board(self, board: chess.Board) -> ChessBoard:
         dimensions = self.get_board_dimensions()
         left = ((self.screen_width - dimensions[0]) / 2) + self.origin[0]
@@ -281,6 +283,8 @@ class ChessGame:
                     
             self.play_sound()
 
+            self.ai_playing = False
+
         self.set_current_player()
 
     def set_current_player(self):
@@ -302,7 +306,10 @@ class ChessGame:
             self.draw_board()
 
             if isinstance(self.current_player, ai_players.AIPlayer):
-                self.play_in_thread()
+                if not self.ai_playing:
+                    # to prevent the thread from being created multiple times
+                    self.ai_playing = True
+                    self.play_in_thread()
 
             pygame.display.flip()
 

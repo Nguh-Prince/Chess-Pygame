@@ -10,7 +10,7 @@ import chess
 from gui_components.board import ChessBoard
 from gui_components.pieces import Piece
 
-from data_structures.trees import Node, Tree
+from data_structures.trees import Tree
 
 class Player:
     def __init__(self, name: str, color: str, board: chess.Board) -> None:
@@ -22,8 +22,64 @@ class Player:
 #     def __init__(self, board) -> None:
 #         self.board = board
 #         pass
+cdef class Node:
+    cdef object data
+    cdef list children
+    cdef object parent
 
-class MoveNodeData:
+    def __init__(self, data, children: list=None, parent=None):
+        self.data = data
+
+        if children is None:
+            self.children = []
+        else:
+            self.children = children
+
+        self.parent = parent
+
+    def add_child(self, node):
+        self.children.append(node)
+        node.parent = self
+
+    def remove_child(self, index=-1):
+        node = self.children.pop(index)
+        node.parent = None
+
+        return node
+
+    def replace_child(self, index, node):
+        self.children[index] = node
+
+    def is_leaf_node(self) -> bool:
+        return len(self.children) == 0
+
+    def __lt__(self, other):
+        return self.compare(other) == -1
+
+    def __gt__(self, other):
+        return self.compare(other) == -1
+
+    def __gte__(self, other):
+        return self.compare(other) >= 0
+
+    def __lte__(self, other):
+        return self.compare(other) <= 0
+
+    cpdef compare(self, other):
+        return self.compare_data(self.data, other.data)
+
+    def __eq__(self, other) -> bool:
+        return self.compare_data(self.data, other.data) == 0
+
+    def __str__(self) -> str:
+        return f"{self.data}"
+
+
+cdef class MoveNodeData:
+    cdef object move
+    cdef int evaluation
+    cdef short fullmove_number
+
     def __init__(self, move: chess.Move=None, evaluation: int=None, fullmove_number: int=None) -> None:
         self.move = move
         self.evaluation = evaluation
@@ -45,7 +101,7 @@ class MoveNodeData:
             self.evaluation > other.evaluation
         )
 
-class MoveNode(Node):
+cdef class MoveNode(Node):
     def __init__(self, data, children: list = None, parent=None):
         super().__init__(data, children, parent)
         self.total_weight = self.get_total_weight()
@@ -56,7 +112,7 @@ class MoveNode(Node):
     def __repr__(self) -> str:
         return self.__str__()
 
-    def compare_data(self, data_1: MoveNodeData, data_2: MoveNodeData) -> int:
+    cpdef compare_data(self, data_1: MoveNodeData, data_2: MoveNodeData):
         if data_1.evaluation is None:
             return -1
         
@@ -70,7 +126,7 @@ class MoveNode(Node):
         if data_1.evaluation > data_2.evaluation:
             return 1
 
-    def compare(self, other):
+    cpdef compare(self, other):
         if self.total_weight > other.total_weight:
             return 1
         elif self.total_weight < other.total_weight:
@@ -78,13 +134,13 @@ class MoveNode(Node):
         else:
             return 0
 
-    def get_total_weight(self):
+    cpdef get_total_weight(self):
         """
         The total weight is the sum of all the weights of this 
         node's ancestors
         """
-        node = self.parent
-        weight = self.data.evaluation
+        cdef object node = self.parent
+        cdef int weight = self.data.evaluation
 
         while node is not None:
             weight += node.data.evaluation
@@ -92,7 +148,7 @@ class MoveNode(Node):
         
         return weight
 
-class AIPlayer:
+cdef class AIPlayer:
     def __init__(self, board: chess.Board, color: str) -> None:
         self.board = board
         self.color = color
@@ -103,11 +159,11 @@ class AIPlayer:
 
         return list(board.legal_moves)
 
-    def play(self, board: chess.Board=None) -> chess.Move:
+    cpdef play(self, board: chess.Board=None):
         """
         Selects a move using some technique from the list of legal moves
         """
-        legal_moves = self.get_legal_moves(board)
+        cdef list legal_moves = self.get_legal_moves(board)
         
         return legal_moves[0]
     
@@ -184,8 +240,6 @@ class AIPlayer:
             print(f"Got assetion error")
             print("The board is")
             pprint(board.__str__().split('\n'))
-            print(f"The move to make is: {move}")
-            breakpoint()
             raise e
 
     def compute_moves_tree(self, required_height=4, board: chess.Board=None):
@@ -279,21 +333,14 @@ class MiniMaxPlayer(PlayerWithEvaluation):
         The board's latest move must correspond to the root_node's move for this method to work effectively
         """
         if board is None:
-            board = self.board
+            board = copy.deepcopy(self.board)
 
         tree = Tree(root_node=root_node)
 
         current_depth = tree.get_height() - 1
 
         leaf_nodes = tree.get_leaf_nodes()
-        
-        print(f"The tree's root nodes are: ")
-        print(leaf_nodes)
-
-        for index, node in enumerate(leaf_nodes):
-            print(f"On node: {index+1} of the tree's leaf nodes. The node: ")
-            print(node)
-            _dummy_board = copy.deepcopy(board)
+        for node in leaf_nodes:
             # since we are getting the leaf moves, we have to first of all execute all of the 
             # moves preceding those ones in the tree
             _node = node.parent
@@ -307,19 +354,14 @@ class MiniMaxPlayer(PlayerWithEvaluation):
 
                 if _node is None:
                     break
-            
-            print("This node's parents are: ")
-            print(moves_to_make)
 
             while moves_to_make:
                 move = moves_to_make.pop()
-                print(f"Executing the move node: {move}")
-                _dummy_board.push(move.data.move)
+                board.push(move.data.move)
 
             try:
-                print("Creating subtree for this leaf node")
                 self.create_moves_subtree(
-                    _dummy_board, node.data.move, tree, 
+                    board, node.data.move, tree, 
                     root_node, current_depth, depth
                 )
             except Exception as e:
@@ -340,21 +382,14 @@ class MiniMaxPlayer(PlayerWithEvaluation):
             
             last_move = board.move_stack.pop()
 
-            # for parent in grandparent.children:
-            #     last_move_node_found = False
-            #     for child in parent.children:
-            #         if child.data.move == last_move and child.data.fullmove_number == board.fullmove_number:
-            #             new_root_node = child
-            #             last_move_node_found = True
+            for parent in grandparent.children:
+                last_move_node_found = False
+                for child in parent.children:
+                    if child.data.move == last_move and child.data.fullmove_number == board.fullmove_number:
+                        new_root_node = child
+                        last_move_node_found = True
                 
-            #     if last_move_node_found:
-            #         break
-            
-            # last_move_node_found = False
-            for child in self.last_move_node.children:
-                if child.data.move == last_move and child.data.fullmove_number == board.fullmove_number:
-                    new_root_node = child
-                    # last_move_node_found = True
+                if last_move_node_found:
                     break
 
             tree = self.expand_subtree_to_depth(new_root_node)
@@ -368,8 +403,8 @@ class MiniMaxPlayer(PlayerWithEvaluation):
         # print("Selecting the optimal move using minimax")
         optimal_node = self.minimax(tree.root_node)
         node = optimal_node.parent
-        # print("The weight along this optimal node's path is")
-        # print(optimal_node.total_weight)
+        print("The weight along this optimal node's path is")
+        print(optimal_node.total_weight)
 
         # get the predecessor of the optimal node that is a direct descendant of the root node
         while node.parent is not tree.root_node:
@@ -378,6 +413,3 @@ class MiniMaxPlayer(PlayerWithEvaluation):
         self.last_move_node = node
 
         return node.data.move
-
-    def play(self) -> chess.Move:
-        return super().play()

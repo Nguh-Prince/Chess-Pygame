@@ -148,12 +148,29 @@ class Tree:
             return None
         
         if not root_node.children:
-            print("Returning leaf node gotten from tree")
             return root_node
         
         for child in root_node.children:
-            print("Getting leaf nodes of some children")
-            leaf_nodes.append( self.get_leaf_nodes(child) )
+            leaf_nodes.append( [node for node in self.get_leaf_nodes(child)] )
 
-        print("Returning all the leaf nodes gotten")
+        return leaf_nodes
+
+    def get_leaf_nodes(self, visited=None, node=None, leaf_nodes=None):
+        if visited is None:
+            visited = []
+        if leaf_nodes is None:
+            leaf_nodes = []
+
+        if node is None:
+            node = self.root_node
+
+        if node not in visited:
+            visited.append(node)
+
+            if not node.children:
+                leaf_nodes.append(node)
+
+        for child in node.children:
+            self.get_leaf_nodes(visited, child, leaf_nodes)
+        
         return leaf_nodes

@@ -83,6 +83,11 @@ piece_square_tables = {
     ]
 }
 
+# piece_square_tables = {
+    # "w": piece_square_tables,
+    # "b": [ ke ]
+# }
+
 class Piece:
     def __init__(self, name, notation, color, skin_directory="skins/default", value: int=None, is_captured=False) -> None:
         self.name = name
