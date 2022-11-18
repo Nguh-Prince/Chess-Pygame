@@ -220,8 +220,6 @@ def draw_chessboard(board: ChessBoard, flip=False):
 
                     screen.blit( image, image_rect )
                 except TypeError as e:
-                    print(f"The square's piece is: ")
-                    print(square.piece)
                     raise e
                 except FileNotFoundError as e:
                     print(f"Error on the square on the {i}th rank and the {j}th rank")

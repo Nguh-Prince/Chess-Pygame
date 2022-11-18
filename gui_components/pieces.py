@@ -83,10 +83,14 @@ piece_square_tables = {
     ]
 }
 
-# piece_square_tables = {
-    # "w": piece_square_tables,
-    # "b": [ ke ]
-# }
+piece_square_tables = {
+    "w": piece_square_tables,
+    "b": { key: value[::-1] for key, value in piece_square_tables.items() } # reversing the previous lists
+}
+
+# negating the values in black's list
+for key, value in piece_square_tables["b"].items():
+    piece_square_tables["b"][key] = [ [ -j for j in rank ] for rank in value ]
 
 class Piece:
     def __init__(self, name, notation, color, skin_directory="skins/default", value: int=None, is_captured=False) -> None:
@@ -114,10 +118,10 @@ class Piece:
         self.__is_captured = bool(is_captured)
 
     def get_piece_value_from_notation_and_position(notation: str, color: str, rank_number, file_number):
-        position_value = piece_square_tables[notation.lower()][7 - rank_number][7 - file_number]
+        position_value = piece_square_tables[color][notation.lower()][7 - rank_number][7 - file_number]
         
         # negating the value obtained from the piece squares table if the piece is black
-        position_value = -position_value if color == "b" else position_value
+        # position_value = -position_value if color == "b" else position_value
 
         piece_value = colors_notations_and_values[color][notation.lower()]
 

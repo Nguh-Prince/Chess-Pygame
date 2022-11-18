@@ -18,6 +18,9 @@ class Player:
         self.color = color
         self.board = board
 
+    def __str__(self) -> str:
+        return self.name
+
 # class UserPlayer:
 #     def __init__(self, board) -> None:
 #         self.board = board
@@ -129,6 +132,7 @@ class AIPlayer:
         return board_copy
 
     def evaluate_board(self, board: chess.Board=None) -> int:
+        print("Calling evaluate_board method")
         if board is None: 
             board = self.board
 
@@ -143,14 +147,12 @@ class AIPlayer:
             for j, notation in enumerate(rank):
                 if regex.search(notation):
                     piece_color = Piece.get_piece_color_based_on_notation(notation)
-                    
                     material_sum += Piece.get_piece_value_from_notation_and_position(notation, piece_color, 7-i, 7-j)
 
         return material_sum
 
     def make_move(self, chess_board: ChessBoard):
         move = self.choose_move()
-        print(f"Choosing move: {move.__str__()}")
         chess_board._play(move=move)
 
     def create_moves_subtree(
@@ -367,12 +369,13 @@ class MiniMaxPlayer(PlayerWithEvaluation):
         
         # print("Selecting the optimal move using minimax")
         optimal_node = self.minimax(tree.root_node)
-        node = optimal_node.parent
+
+        node = optimal_node.parent if optimal_node.parent is not None else node
         # print("The weight along this optimal node's path is")
         # print(optimal_node.total_weight)
 
         # get the predecessor of the optimal node that is a direct descendant of the root node
-        while node.parent is not tree.root_node:
+        while node.parent is not tree.root_node and node.parent is not None:
             node = node.parent
 
         self.last_move_node = node

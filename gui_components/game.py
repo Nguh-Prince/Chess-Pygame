@@ -1,10 +1,13 @@
 import threading
+from turtle import TurtleScreen
 import chess
 
 # from ..data_structures import trees
 from ai import players as ai_players
 from gui_components.board import ChessBoard
 import pygame
+
+from gui_components.pieces import Piece
 
 # pygame.init()
 pygame.mixer.init()
@@ -88,6 +91,12 @@ class ChessGame:
     @property
     def dark_square_color(self) -> tuple:
         return self.COLORS[self.color_scheme]['dark']
+
+    def __get_promotion_pieces_for_color(color):
+        return [
+            Piece("queen", "q", color), Piece("bishop", "b", color), Piece("knight", "n", color), 
+            Piece("rook", "r", color)
+        ]
 
     def draw_board(self):
         def draw_bordered_rectangle(rectangle: BorderedRectangle):
@@ -208,6 +217,23 @@ class ChessGame:
                 else:
                     pygame.draw.rect( self.screen, square.background_color, square )
 
+                if square.is_possible_move and self.board.move_hints:
+                    if not square.piece: # draw a simple circle if the square doesn't have a piece on it
+                        pygame.draw.circle(
+                            self.screen, self.possible_move_highlight_color, 
+                            square.center, board_square_size * 0.25
+                        )
+                    else: # draw two circles around the piece
+                        pygame.draw.circle(
+                            self.screen, self.possible_move_highlight_color, 
+                            square.center, board_square_size * 0.5
+                        )
+                        pygame.draw.circle(
+                            self.screen, square.background_color, 
+                            square.center, board_square_size * 0.45
+                        )
+
+
                 if square.piece:
                     try:
                         image = square.piece.get_image()
@@ -222,12 +248,6 @@ class ChessGame:
                     except FileNotFoundError as e:
                         print(f"Error on the square on the {i}th rank and the {j}th rank")
                         raise e
-
-                if square.is_possible_move and self.board.move_hints:
-                    pygame.draw.circle(
-                        self.screen, self.possible_move_highlight_color, 
-                        square.center, board_square_size * 0.25
-                    )
 
             captured_pieces_rectangle_height = 20
 
@@ -244,6 +264,37 @@ class ChessGame:
 
             draw_captured_piece_images(captured_pieces_rectangles)
 
+        if self.game_over:
+            game_over_surface = pygame.Surface( 
+                (self.screen_width, self.screen_height), pygame.SRCALPHA 
+            )
+            game_over_surface.fill((0, 0, 0, 140))
+            self.screen.blit(game_over_surface, (0, 0))
+
+            text_color = (255, 255, 255)
+            font_size = 40
+            font = pygame.font.SysFont('helvetica', font_size)
+
+            for i in range(2):
+                # display texts (Game over and the result i.e. stalemate, draw, checkmate etc.)
+                if i == 0:
+                    text_content = "Game over"
+                else:
+                    if self.board.board.is_checkmate():
+                        winner = not self.board.board.turn
+                        text_content = f"{'White' if winner else 'Black'} won by checkmate"
+
+                    if self.board.board.is_stalemate():
+                        text_content = "Draw by stalemate"
+
+
+                text = font.render(text_content, True, text_color )
+                text_rect = text.get_rect()
+                # display in the middle of the screen
+                text_rect.center = ( self.screen_width // 2, self.screen_height // 2 + ( font_size * i ) )
+
+            self.screen.blit(text, text_rect)
+
     def play_sound(self):
         if self.board.board.is_checkmate():
             if not self.game_over:
@@ -253,6 +304,8 @@ class ChessGame:
         elif self.board.board.is_check():
             pygame.mixer.Sound.play(self.SOUNDS["check"])
 
+        elif self.board.board.is_stalemate():
+            self.game_over = True
         else:
             pygame.mixer.Sound.play(self.SOUNDS["move"])
         
