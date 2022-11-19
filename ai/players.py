@@ -141,13 +141,21 @@ class AIPlayer:
         
         material_sum = 0
 
-        ranks = [ row.split(' ') for row in string.split('\n') if regex.search(row)]
+        ranks = [ row.split(' ') for row in string.split('\n')]
         
+        black_eval = 0
+        white_eval = 0
+
         for i, rank in enumerate(ranks):
             for j, notation in enumerate(rank):
                 if regex.search(notation):
                     piece_color = Piece.get_piece_color_based_on_notation(notation)
-                    material_sum += Piece.get_piece_value_from_notation_and_position(notation, piece_color, 7-i, 7-j)
+                    piece_positional_value = Piece.get_piece_value_from_notation_and_position(notation, piece_color, i, j)
+                    
+                    black_eval += piece_positional_value if piece_color == "b" else 0
+                    white_eval += piece_positional_value if piece_color == "w" else 0
+
+                    material_sum += piece_positional_value
 
         return material_sum
 
@@ -252,10 +260,11 @@ class PlayerWithEvaluation(AIPlayer):
 
 
 class MiniMaxPlayer(PlayerWithEvaluation):
-    def __init__(self, board: chess.Board, color: str) -> None:
+    def __init__(self, board: chess.Board, color: str, search_depth=3) -> None:
         super().__init__(board, color)
         self.moves_tree: Tree = None
         self.last_move_node: MoveNode = None
+        self.search_depth = search_depth
 
     def minimax(self, node: MoveNode, is_max=None):
         """
@@ -275,11 +284,14 @@ class MiniMaxPlayer(PlayerWithEvaluation):
         else:
             return node
 
-    def expand_subtree_to_depth(self, root_node: MoveNode, depth=3, revise_existing_children=False, board: chess.Board=None) -> Tree:
+    def expand_subtree_to_depth(self, root_node: MoveNode, depth=None, revise_existing_children=False, board: chess.Board=None) -> Tree:
         """
         Depth here does not include the root node, just its descendants.
         The board's latest move must correspond to the root_node's move for this method to work effectively
         """
+        if depth is None:
+            depth = self.search_depth
+
         if board is None:
             board = self.board
 
@@ -365,14 +377,12 @@ class MiniMaxPlayer(PlayerWithEvaluation):
             # compute the game tree and get the leaf with the smallest or largest 
             # evaluation depending on the player's color
             print("Computing the moves tree")
-            tree = self.compute_moves_tree(required_height=2, board=board)
+            tree = self.compute_moves_tree(required_height=self.search_depth, board=board)
         
         # print("Selecting the optimal move using minimax")
         optimal_node = self.minimax(tree.root_node)
 
         node = optimal_node.parent if optimal_node.parent is not None else node
-        # print("The weight along this optimal node's path is")
-        # print(optimal_node.total_weight)
 
         # get the predecessor of the optimal node that is a direct descendant of the root node
         while node.parent is not tree.root_node and node.parent is not None:
