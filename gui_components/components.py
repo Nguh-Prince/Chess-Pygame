@@ -1,6 +1,9 @@
 import pygame
 
 class BorderedRectangle():
+    """
+    An object that contains 2 pygame.Rect object, one put inside the other
+    """
     def __init__(
         self, left: float, top: float, width: float, height: float, 
         background_color: str, border_color: str, border_width: int,

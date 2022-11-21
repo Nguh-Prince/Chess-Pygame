@@ -1,5 +1,3 @@
-import copy
-
 import chess
 
 import pygame
@@ -36,21 +34,36 @@ class ChessSquare(Square):
         self.files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
     def get_chess_square(self) -> chess.Square:
+        """
+        Returns a chess.Square object that corresponds to this one
+        """
         return chess.square(self.file_number, self.rank_number)
 
     def is_identical_to_chess_square(self, square: chess.Square) -> bool:
+        """
+        Checks if this object corresponds to a chess.Square object
+        """
         return (
             self.file_number == chess.square_file(square) and 
             self.rank_number == chess.square_rank(square)
         )
 
     def get_rank(self) -> str:
+        """
+        Gets the rank of the object. Ranks are the rows of the board and they range from 1 to 8
+        """
         return self.ranks[ self.rank_number ]
 
     def get_file(self) -> str:
+        """
+        Gets the file of the object. Files are the columns of the board and range from A to H
+        """
         return self.files[ self.file_number ]
 
     def get_notation(self) -> str:
+        """
+        Gets the notation of the square object. A squares notation is simply its file and rank
+        """
         return f'{self.get_file()}{self.get_rank()}'
 
 class Board(pygame.sprite.Sprite):
@@ -123,6 +136,9 @@ class ChessBoard(Board):
 
 
     def get_piece_from_notation(self, notation):
+        """
+        Returns a piece object based on a particular notation
+        """
         if notation != '.':
             piece_color = "b" if notation.islower() else "w"
             notation = notation.lower()
@@ -133,6 +149,9 @@ class ChessBoard(Board):
         return None
 
     def get_square_from_chess_square(self, square: chess.Square) -> ChessSquare:
+        """
+        Returns a Square object that corresponds to a particular chess.Square object
+        """
         square_file = chess.square_file(square)
         square_rank = chess.square_rank(square)
 
@@ -141,6 +160,9 @@ class ChessBoard(Board):
         return rank[ square_file ]
 
     def create_squares(self):
+        """
+        Creates the squares oon the board and places pieces on them based on the state of the chess.Board object
+        """
         string = self.board.__str__()
         ranks_inverted = string.split('\n')#[::-1]
 
@@ -164,6 +186,9 @@ class ChessBoard(Board):
                 self.squares[i].append( board_square )
 
     def flip(self):
+        """
+        Changes the coordinates of the squares in essence flipping them
+        """
         board_rect = pygame.Rect(self.left, self.top, self.width, self.height)
 
         for (i, rank) in enumerate(self.squares):
@@ -205,6 +230,9 @@ class ChessBoard(Board):
                 self.squares[i][j].piece = piece
 
     def get_possible_moves(self, source_coordinates, remove_hints=False):
+        """
+        Gets the possible moves from some coordinates and marks the squares as possible moves if move_hints are enabled
+        """
         # source_square = [ square.get_chess_square() for square in self.iter_squares() if square.collidepoint(source_coordinates) ]
         source_square = self.get_square_from_coordinates(source_coordinates)
 
@@ -217,6 +245,9 @@ class ChessBoard(Board):
         return []
 
     def get_possible_moves_without_hint(self, source_coordinates):
+        """
+        Gets the possible moves from some coordinates
+        """
         source_square = self.get_square_from_coordinates(source_coordinates)
 
         if source_square:
@@ -228,9 +259,15 @@ class ChessBoard(Board):
         return []
 
     def hide_hints(self):
+        """
+        Hides the hints on the squares
+        """
         [square.set_is_possible_move(False) for square in self.iter_squares()]
     
     def get_square_from_coordinates(self, coordinates, return_chess_square=True) -> ChessSquare:
+        """
+        Returns a square that corresponds to the coordinates passed
+        """
         square = [ (square.get_chess_square() if return_chess_square else square) for square in self.iter_squares() if square.collidepoint(coordinates) ]
         
         if len(square) > 0:
@@ -241,6 +278,9 @@ class ChessBoard(Board):
         return None
 
     def get_move_notation(self, source_square: ChessSquare, destination_square: ChessSquare):
+        """
+        Gets the notation for a particular move made from source_square to destination_square
+        """
         move = ''
         
         if source_square.piece:
@@ -288,17 +328,21 @@ class ChessBoard(Board):
         return move
 
     def get_pieces_that_can_make_move(self, piece_notations: list, color, square: ChessSquare, squares_to_exclude: list):
+        """
+        Returns the pieces with notations in <piece_notations> list and of color <color> that can make a move the <square> square 
+        while excluding the pieces on the <squares_to_exclude> list
+        """
         squares_with_pieces_of_specified_types = [ _square for _square in self.iter_squares() if _square.piece and _square.piece.get_notation() in piece_notations and _square.piece.color == color and _square not in squares_to_exclude ]
         squares_that_can_make_move = [ _square for _square in squares_with_pieces_of_specified_types if square in self.get_possible_moves_without_hint(_square.center) ]
 
         return squares_that_can_make_move
 
     def play(self, source_coordinates, destination_coordinates):
+        """
+        Makes a move from source_coordinates to destination_coordinates
+        """
         source_square = self.get_square_from_coordinates(source_coordinates, return_chess_square=False)
         destination_square = self.get_square_from_coordinates(destination_coordinates, return_chess_square=False)
-
-        print(f"Making a move. The source square is {source_square.get_notation()}, the destination square is {destination_square.get_notation()}")
-        print(f"The piece on the source square is: {source_square.piece.__str__()}")
 
         self._play(source_square, destination_square)
 
@@ -306,6 +350,9 @@ class ChessBoard(Board):
         source_chess_square: chess.Square=None, destination_chess_square: chess.Square=None,
         move: chess.Move=None
     ):
+        """
+        Makes a move based on the arguments.
+        """
         if move:
             self.make_move(move)
             self.previous_move_square = self.get_square_from_chess_square(move.from_square)
@@ -332,6 +379,9 @@ class ChessBoard(Board):
         print(self.board)
 
     def make_move(self, move):
+        """
+        Makes a move either with an str object or a chess.Move object
+        """
         if isinstance(move, str):
             self.board.push_san(move)
         elif isinstance(move, chess.Move):
@@ -351,6 +401,10 @@ class ChessBoard(Board):
             self.board.push(move)
 
     def iter_squares(self):
+        """
+        A generator that returns the different squares on the board
+        """
         for rank in self.squares:
             for square in rank:
                 yield square
+

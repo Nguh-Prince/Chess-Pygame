@@ -1,18 +1,16 @@
 import threading
-from turtle import TurtleScreen
+from xml.dom import ValidationErr
 import chess
 
-# from ..data_structures import trees
 from ai import players as ai_players
 from gui_components.board import ChessBoard
 import pygame
 
 from gui_components.pieces import Piece
-from main import WHITE_COLOR
 
 BLACK_COLOR = (0, 0, 0)
+WHITE_COLOR = (255, 255, 255)
 
-# pygame.init()
 pygame.mixer.init()
 
 from gui_components.components import BorderedRectangle
@@ -81,7 +79,6 @@ class ChessGame:
             light_square_color=self.COLORS[self.color_scheme]["light"], dark_square_color=self.COLORS[self.color_scheme]["dark"], 
             board=board
         )
-
         return chess_board
     
     @property
@@ -173,8 +170,36 @@ class ChessGame:
                 print(f"Image file for piece was not found")
                 raise e
 
+        def draw_text(text: str, text_color=None, font_size=15, font_family='helvetica', rect: pygame.Rect=None, center_coordinates: tuple=None):
+            """
+            Draws text <text> with center coordinates center_coordinates or the center of the rect object passed
+            """
+            if text_color is None:
+                text_color = self.dark_square_color
+
+            if rect is None and center_coordinates is None:
+                raise ValueError("One of the following must not be None: (rect, center_coordinates)")
+            
+            if rect is not None and not isinstance(rect, pygame.Rect):
+                raise ValueError("The rect argument must be a pygame.Rect object")
+
+            if center_coordinates is not None and isinstance(center_coordinates,tuple):
+                raise ValueError("The center_coordinates must be a tuple")
+
+            if center_coordinates is None:
+                center_coordinates = rect.center
+
+            font = pygame.font.SysFont(font_family, font_size)
+
+            text = font.render(text, True, text_color)
+            text_rect = text.get_rect()
+            text_rect.center = center_coordinates
+
+            self.screen.blit(text, text_rect)
+
         def draw_rectangle(rectangle: pygame.Rect, background_color: tuple, border_width: int=0):
             pygame.draw.rect(self.screen, background_color, rectangle, width=border_width)
+        
         ranks = self.board.squares
 
         # getting the coordinates of the left and top of the outermost border
@@ -203,36 +228,6 @@ class ChessGame:
         board_square_size = self.board.square_size
 
         for i, rank in enumerate(ranks):
-            rank_number = ChessBoard.RANKS[7-i] if not self.board.is_flipped else ChessBoard.RANKS[i]
-            file_letter = ChessBoard.FILES[i] if not self.board.is_flipped else ChessBoard.FILES[7-i]
-
-            if self.show_ranks_and_files:
-                font_size = 20
-
-                font = pygame.font.SysFont('helvetica', font_size - 5)
-
-                for _i in range(2):
-                    if _i == 0:
-                        # drawing rank number (1-8)
-                        _rect = pygame.Rect(
-                            board_top_left[0] - font_size, board_top_left[1] + ( i * board_square_size ), 
-                            font_size, board_square_size
-                        )
-                        character = str(rank_number)
-                    else:
-                        # drawing file letter (A-H)
-                        _rect = pygame.Rect(
-                            board_bottom_left[0] + (i*board_square_size), board_bottom_left[1], 
-                            board_square_size, font_size
-                        )
-                        character = file_letter
-                    
-                    text = font.render(character, True, self.dark_square_color)
-                    text_rect = text.get_rect()
-                    text_rect.center = _rect.center
-
-                    self.screen.blit(text, text_rect)
-
             for j, square in enumerate(rank):
                 if square is self.board.previous_move_square:
                     pygame.draw.rect( self.screen, self.board.previous_square_highlight_color, square )
@@ -257,14 +252,9 @@ class ChessGame:
                             square.center, board_square_size * 0.45
                         )
 
-
                 if square.piece:
                     try:
-                        image = square.piece.get_image()
-                        image_rect = image.get_rect()
-                        image_rect.center = square.center
-
-                        self.screen.blit( image, image_rect )
+                        draw_piece(square.piece, square)
                     except TypeError as e:
                         print(f"The square's piece is: ")
                         print(square.piece)
@@ -272,6 +262,36 @@ class ChessGame:
                     except FileNotFoundError as e:
                         print(f"Error on the square on the {i}th rank and the {j}th rank")
                         raise e
+
+                if self.show_ranks_and_files and (square.rank_number == 0 or square.file_number == 0):
+                    font_size = 10
+
+                    square_rank_number = square.rank_number
+                    square_file_number = square.file_number
+
+                    color = (
+                        self.dark_square_color 
+                        if square.background_color == self.light_square_color else 
+                        self.light_square_color
+                    )
+
+                    if square_rank_number == 0:
+                        # write the file numbers in the squares on the first rank
+                        character = str(square.get_file()).upper()
+                        _rect = pygame.Rect(
+                            square.right - font_size, square.bottom - font_size, 
+                            font_size, font_size
+                        )
+                        draw_text(character, color, rect=_rect, font_size=10)
+                        
+                    if square_file_number == 0:
+                        # write the rank numbers in the squares on the first file
+                        character = str(square.get_rank())
+                        _rect = pygame.Rect(
+                            square.left, square.top, font_size, font_size
+                        )
+                        draw_text(character, color, rect=_rect, font_size=10)
+                        
 
             captured_pieces_rectangle_height = 20
 

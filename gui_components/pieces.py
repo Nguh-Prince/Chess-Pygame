@@ -93,17 +93,14 @@ class Piece:
     for key, value in piece_square_tables["b"].items():
         piece_square_tables["b"][key] = [ [ -j for j in rank ] for rank in value ]
 
-    def __init__(self, name, notation, color, skin_directory="skins/default", value: int=None, is_captured=False) -> None:
+    def __init__(self, name, notation, color, skin_directory="skins/default", is_captured=False) -> None:
         self.name = name
         self.__notation = notation
         self.color = color
         self.skin_directory = skin_directory
         self.set_is_captured(is_captured)
 
-        if value:
-            self.value = value if self.color == "w" else value * -1
-        else:
-            self.value = self.get_piece_value()
+        self.value = self.get_piece_value()
     
     def get_piece_value(self):
         return Piece.colors_notations_and_values[self.color][self.__notation.lower()]
@@ -128,6 +125,10 @@ class Piece:
         return position_value + piece_value
 
     def get_image_path(self):
+        """
+        Gets the path to the image of the piece based on its notation and 
+        whether or not it has been captured
+        """
         if not self.__is_captured:
             path = os.path.join(self.skin_directory, self.color, f"{self.__notation.lower()}.png")
         else:
@@ -136,6 +137,9 @@ class Piece:
         return path
 
     def get_image(self):
+        """
+        Returns a pygame image object from the piece's corresponding image path
+        """
         image_path = self.get_image_path()
 
         if os.path.exists(image_path):
@@ -147,6 +151,9 @@ class Piece:
         return f"{self.__notation} {self.color}"
 
     def get_notation(self) -> str:
+        """
+        Returns the notation of the piece, (pawns' notations are empty strings)
+        """
         if self.__notation != 'p':
             return self.__notation.upper()
 
@@ -157,7 +164,9 @@ class Piece:
 
     def promote(self, notation: str):
         """
-        Promotes this piece to a piece with the notation
+        Promotes this piece to a piece with the notation notation.
+        It is important to note that promotion does not increase the piece's value, 
+        just its capabilities
         """
         if self.__notation.lower() != "p":
             raise ValueError("Cannot promote a piece other than a pawn")
