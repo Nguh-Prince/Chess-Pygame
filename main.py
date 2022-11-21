@@ -45,6 +45,7 @@ running = True
 LIGHT_COLOR = (245, 245, 245)
 DARK_COLOR = ( 100, 100, 100 )
 WHITE_COLOR = (255, 255, 255)
+BLACK_COLOR = (0, 0, 0)
 
 chess_board = ChessBoard(
     50, 50, 400, 400, 0, 0, board=board
@@ -101,57 +102,6 @@ def draw_chessboard(board: ChessBoard, flip=False):
         screen, board_bordered_rectangle.border_color, board_bordered_rectangle.inner_rectangle, 
         width=1
     )
-
-    # top_player_captured_pieces_bordered_rectangle = BorderedRectangle(45, 20, 410, 25, WHITE_COLOR, DARK_COLOR, 5)
-    # draw_bordered_rectangle(top_player_captured_pieces_bordered_rectangle, screen)
-
-    # bottom_player_captured_pieces_bordered_rectangle = BorderedRectangle(45, 450, 410, 25, WHITE_COLOR, DARK_COLOR, 5)
-    # draw_bordered_rectangle(bottom_player_captured_pieces_bordered_rectangle, screen)
-
-    # captured_material_difference = get_material_difference( chess_board.captured_pieces )
-
-    # if captured_material_difference != 0:
-    #     if captured_material_difference > 0: 
-    #         print("Black has a material advantage")
-    #         # black has more
-    #         draw_captured_images(
-    #             top_player_captured_pieces_bordered_rectangle.inner_rectangle, chess_board.captured_pieces["w"], 
-    #             difference=abs(captured_material_difference)
-    #         )
-        
-    #         draw_captured_images(
-    #             bottom_player_captured_pieces_bordered_rectangle.inner_rectangle, 
-    #             chess_board.captured_pieces["b"]
-    #         )
-        
-    #     else:
-    #         print("White has material advantage")
-    #         # white has more
-    #         draw_captured_images(
-    #             top_player_captured_pieces_bordered_rectangle.inner_rectangle, chess_board.captured_pieces["w"]
-    #         )
-        
-    #         draw_captured_images(
-    #             bottom_player_captured_pieces_bordered_rectangle.inner_rectangle, 
-    #             chess_board.captured_pieces["b"], abs(captured_material_difference)
-    #         )
-    # else:
-    #     # equal material
-    #     draw_captured_images(
-    #         top_player_captured_pieces_bordered_rectangle.inner_rectangle, chess_board.captured_pieces["w"]
-    #     )
-        
-    #     draw_captured_images(
-    #         bottom_player_captured_pieces_bordered_rectangle.inner_rectangle, chess_board.captured_pieces["b"]
-    #     )
-
-    # for index, piece in enumerate(chess_board.captured_pieces["w"]):
-    #     image = piece.get_image()
-    #     image_rect = image.get_rect()
-    #     image_rect.centery = top_player_captured_pieces_bordered_rectangle.inner_rectangle.centery
-    #     image_rect.left = ( top_player_captured_pieces_bordered_rectangle.inner_rectangle.left + 5 ) + (index * captured_pieces_width)
-
-    #     screen.blit(image, image_rect)
 
     board_top_left = board.rect.topleft
     board_top_right = board.rect.topright

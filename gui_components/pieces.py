@@ -68,7 +68,7 @@ class Piece:
             [-3.0, 0.0, 1.0, 1.5, 1.5, 1.0, 0.0, -3.0],
             [-3.0, 0.5, 1.5, 2.0, 2.0, 1.5, 0.5, -3.0],
             [-3.0, 0.0, 1.5, 2.0, 2.0, 1.5, 0.0, -3.0],
-            [-3.0, 0.5, 1.0, 1.5, 1.5, 1.0, 0.5, 3.0],
+            [-3.0, 0.5, 1.0, 1.5, 1.5, 1.0, 0.5, -3.0],
             [-4.0, -2.0, 0.0, 0.5, 0.5, 0.0, -2.0, -4.0],
             [-5.0, -4.0, -3.0, -3.0, -3.0, -3.0, -4.0, -5.0]
         ],
@@ -167,27 +167,3 @@ class Piece:
 
         self.__set_notation(notation)
         
-
-class Pawn(Piece):
-    def __init__(self, color, skin_directory) -> None:
-        super().__init__("pawn", "", color, skin_directory)
-
-class Knight(Piece):
-    def __init__(self, color, skin_directory) -> None:
-        super().__init__("knight", "k", color, skin_directory)
-
-class Bishop(Piece):
-    def __init__(self, color, skin_directory) -> None:
-        super().__init__("bishop", "b", color, skin_directory)
-
-class Rook(Piece):
-    def __init__(self, color, skin_directory) -> None:
-        super().__init__("rook", "r", color, skin_directory)
-
-class Queen(Piece):
-    def __init__(self, color, skin_directory) -> None:
-        super().__init__("queen", "q", color, skin_directory)
-
-class King(Piece):
-    def __init__(self, color, skin_directory) -> None:
-        super().__init__("king", "k", color, skin_directory)

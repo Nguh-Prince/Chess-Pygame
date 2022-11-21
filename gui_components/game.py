@@ -8,6 +8,9 @@ from gui_components.board import ChessBoard
 import pygame
 
 from gui_components.pieces import Piece
+from main import WHITE_COLOR
+
+BLACK_COLOR = (0, 0, 0)
 
 # pygame.init()
 pygame.mixer.init()
@@ -45,9 +48,6 @@ class ChessGame:
         self.screen = screen
         self.screen_rect = screen.get_rect()
 
-        # for key, player in players.items():
-        #     if player.color == "w":
-        #         self.current_player = None
         self.current_player = players[True]
 
         self.screen_width = screen_width
@@ -60,7 +60,7 @@ class ChessGame:
         if board is None:
             board = chess.Board()
 
-        self.create_chess_board(board)
+        self.board = self.create_gui_chess_board(board)
 
         self.source_position = None
         self.first_move_has_been_played = False
@@ -69,7 +69,9 @@ class ChessGame:
 
         self.ai_playing = False
 
-    def create_chess_board(self, board: chess.Board) -> ChessBoard:
+        print(f"Board rectangle is: {self.board.rect}")
+
+    def create_gui_chess_board(self, board: chess.Board) -> ChessBoard:
         dimensions = self.get_board_dimensions()
         left = ((self.screen_width - dimensions[0]) / 2) + self.origin[0]
         top = ( (self.screen_height -dimensions[1]) / 2 ) + self.origin[1]
@@ -79,8 +81,6 @@ class ChessGame:
             light_square_color=self.COLORS[self.color_scheme]["light"], dark_square_color=self.COLORS[self.color_scheme]["dark"], 
             board=board
         )
-
-        self.board = chess_board
 
         return chess_board
     
@@ -151,6 +151,30 @@ class ChessGame:
                 
                 self.screen.blit(text, text_rect)
 
+        def draw_piece(piece: Piece, rect: pygame.Rect=None, center_coordinates: tuple=None):
+            """
+            draws a piece and sets its center either to that of the rect argument's center or the 
+            center_coordinates argument passed
+            """
+            if center_coordinates is None and rect is None:
+                raise ValueError("One of the following must not be None: (rect, center_coordinates)")
+            elif not center_coordinates:
+                center_coordinates = rect.center
+
+            try:
+                image = piece.get_image()
+                image_rect = image.get_rect()
+                image_rect.center = center_coordinates
+
+                self.screen.blit(image, image_rect)
+            except TypeError as e:
+                raise e
+            except FileNotFoundError as e:
+                print(f"Image file for piece was not found")
+                raise e
+
+        def draw_rectangle(rectangle: pygame.Rect, background_color: tuple, border_width: int=0):
+            pygame.draw.rect(self.screen, background_color, rectangle, width=border_width)
         ranks = self.board.squares
 
         # getting the coordinates of the left and top of the outermost border
@@ -264,36 +288,68 @@ class ChessGame:
 
             draw_captured_piece_images(captured_pieces_rectangles)
 
-        if self.game_over:
-            game_over_surface = pygame.Surface( 
-                (self.screen_width, self.screen_height), pygame.SRCALPHA 
-            )
-            game_over_surface.fill((0, 0, 0, 140))
-            self.screen.blit(game_over_surface, (0, 0))
+        transparent_backdrop = pygame.Surface(
+            (self.screen_width, self.screen_height), pygame.SRCALPHA
+        )
 
-            text_color = (255, 255, 255)
-            font_size = 40
-            font = pygame.font.SysFont('helvetica', font_size)
+        # print("Created transparent backdrop")
 
-            for i in range(2):
-                # display texts (Game over and the result i.e. stalemate, draw, checkmate etc.)
-                if i == 0:
-                    text_content = "Game over"
-                else:
-                    if self.board.board.is_checkmate():
-                        winner = not self.board.board.turn
-                        text_content = f"{'White' if winner else 'Black'} won by checkmate"
+        # if self.game_over:
+        #     transparent_backdrop.fill((0, 0, 0, 140))
+        #     self.screen.blit(transparent_backdrop, (0, 0))
 
-                    if self.board.board.is_stalemate():
-                        text_content = "Draw by stalemate"
+        #     text_color = (255, 255, 255)
+        #     font_size = 40
+        #     font = pygame.font.SysFont('helvetica', font_size)
+
+        #     for i in range(2):
+        #         # display texts (Game over and the result i.e. stalemate, draw, checkmate etc.)
+        #         if i == 0:
+        #             text_content = "Game over"
+        #         else:
+        #             if self.board.board.is_checkmate():
+        #                 winner = not self.board.board.turn
+        #                 text_content = f"{'White' if winner else 'Black'} won by checkmate"
+
+        #             if self.board.board.is_stalemate():
+        #                 text_content = "Draw by stalemate"
 
 
-                text = font.render(text_content, True, text_color )
-                text_rect = text.get_rect()
-                # display in the middle of the screen
-                text_rect.center = ( self.screen_width // 2, self.screen_height // 2 + ( font_size * i ) )
+        #         text = font.render(text_content, True, text_color )
+        #         text_rect = text.get_rect()
+        #         # display in the middle of the screen
+        #         text_rect.center = ( self.screen_width // 2, self.screen_height // 2 + ( font_size * i ) )
 
-            self.screen.blit(text, text_rect)
+        #     self.screen.blit(text, text_rect)
+
+        # if 1:
+        #     print("Drawing promotion pieces")
+        #     # promotion
+        #     transparent_backdrop.fill((0, 0, 0, 140))
+        #     self.screen.blit(transparent_backdrop, (0, 0))
+            
+        #     pawn_promotion_rectangle = pygame.Rect(
+        #         0, 0, board_square_size * 4, board_square_size
+        #     )
+        #     board_rectangle = self.board.rect
+
+        #     for i in range(2):
+        #         pawn_promotion_rectangle.centerx = board_rectangle.centerx
+        #         pawn_promotion_rectangle.centery = (
+        #             self.board.squares[0][0].centery 
+        #             if i == 0 else 
+        #             self.board.squares[7][0].centery
+        #         )
+
+        #         promotion_pieces = ChessGame.__get_promotion_pieces_for_color("w" if i == 0 else "b")
+
+        #         for index, piece in enumerate(promotion_pieces):
+        #             square = pygame.Rect(
+        #                 pawn_promotion_rectangle.left + (index * board_square_size), 
+        #                 pawn_promotion_rectangle.centery, board_square_size, board_square_size
+        #             )
+        #             draw_rectangle(square, BLACK_COLOR if i==0 else WHITE_COLOR, 1 )
+        #             draw_piece(piece, rect=square)
 
     def play_sound(self):
         if self.board.board.is_checkmate():
