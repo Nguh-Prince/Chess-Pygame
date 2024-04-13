@@ -240,6 +240,8 @@ class ChessApp:
                     # self.chess_board.play( SOURCE_POSITION, position )
                     self.play(SOURCE_POSITION, position)
 
+                    SOURCE_POSITION = None
+
 
     def run(self):
         while self.is_running:
