@@ -68,8 +68,8 @@ class ChessSquare(Square):
         return f'{self.get_file()}{self.get_rank()}'
 
 class Board(pygame.sprite.Sprite):
-    RANKS = [ i+1 for i in range(0, 8) ]
-    FILES = [ chr(i) for i in range(65, 65+9) ]
+    RANKS = [ i+1 for i in range(0, 8) ] # 0 - 7
+    FILES = [ chr(i) for i in range(65, 65+9) ] # A - H
 
     def __init__(self, number_of_rows, number_of_columns, left, top, width, height, horizontal_padding, vertical_padding, **kwargs) -> None:
         self.left = left

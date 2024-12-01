@@ -3,12 +3,10 @@ import chess.pgn
 
 import pygame
 from pygame import mixer
-import pygame_gui
 
 from pygame_gui.ui_manager import UIManager
 from pygame_gui.elements.ui_panel import UIPanel
 from pygame_gui.elements.ui_text_box import UITextBox
-from pygame_gui.elements.ui_image import UIImage
 
 from gui_components.board import ChessBoard
 from gui_components.components import BorderedRectangle
@@ -25,9 +23,10 @@ players = {
     False: "user"
 }
 
+# The initial turns, before the game actually starts
 turns_taken = {
-    True: False, # set 
-    False: False
+    True: False, # this means it's not yet white's turn
+    False: False # this means it's not yet black's turn
 }
 
 move_sound = mixer.Sound("sound_effects/piece_move.mp3")
@@ -43,7 +42,7 @@ IS_FIRST_MOVE = True
 
 
 class ChessApp:
-    def __init__(self, color="white"):
+    def __init__(self, color="black", pass_and_play=False, rotate=False):
         pygame.init()
 
         self.root_window_surface = pygame.display.set_mode((912, 600))
@@ -64,6 +63,8 @@ class ChessApp:
             html_text="",
             container=self.pgn_panel
         )
+
+        self.color = color
 
         self.board = chess.Board()
         self.chess_board = ChessBoard(
@@ -96,8 +97,11 @@ class ChessApp:
         board_bottom_left = board.rect.bottomleft
 
         for i, rank in enumerate(ranks):
-            rank_number = ChessBoard.RANKS[ 7 - i ]
-            file_letter = ChessBoard.RANKS[i]
+            rank_index = 7 - i if self.color == "white" else i
+            file_index = i if self.color == "white" else 7 - i
+
+            rank_number = ChessBoard.RANKS[ rank_index ]
+            file_letter = ChessBoard.FILES[file_index]
             
             font_size = 15 # font size for the ranks and files
             
@@ -105,38 +109,42 @@ class ChessApp:
             font = pygame.font.SysFont('helvetica', font_size)
 
             # render the ranks (1-8)
-            for _i in range(1):
+            for _i in range(2):
+                # draw ranks on the left
                 if _i == 0:
                     _rect = pygame.Rect(
                         board_top_left[0] - font_size, board_top_left[1] + (i*board.square_size), 
                         font_size, board.square_size
                     )
-                else:
+                # draw ranks on the right
+                elif _i == 1:
                     _rect = pygame.Rect(
                         board_top_right[0], board_top_right[1] + (i*board.square_size),
                         font_size, board.square_size
                     )
 
-                text = font.render(f"{rank_number}", True, DARK_COLOR)
+                text = font.render(f"{rank_number}", True, WHITE_COLOR)
                 text_rect = text.get_rect()
                 text_rect.center = _rect.center
 
                 self.screen.blit(text, text_rect)
 
             # render the files A-H
-            for _i in range(1):
+            for _i in range(2):
+                # draw files at the top
                 if _i == 0:
                     _rect = pygame.Rect(
                         board_top_left[0] + (i*board.square_size), board_top_left[1] - font_size, 
                         board.square_size, font_size
                     )
-                else:
+                # draw files at the bottom
+                elif _i == 1:
                     _rect = pygame.Rect(
                         board_top_left[0] + (i*board.square_size), board_bottom_left[1], 
                         board.square_size, font_size
                     )
                 
-                text = font.render(f"{file_letter}", True, DARK_COLOR)
+                text = font.render(f"{file_letter}", True, WHITE_COLOR)
                 text_rect = text.get_rect()
                 text_rect.center = _rect.center
 
@@ -191,7 +199,7 @@ class ChessApp:
         global TURN, IS_FIRST_MOVE
         board = self.board
 
-        turn = board.turn
+        turn = board.turn # board.turn is True when it's white Turn to play and False for black
 
         turns_taken[turn] = not turns_taken[turn]
         print(f"Setting {turns_taken[turn]} to {not turns_taken[turn]}")
